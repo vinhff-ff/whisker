@@ -1,0 +1,66 @@
+.home-page {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+
+  overflow: hidden;
+
+  // Chặn cuộn và zoom trên mobile
+  touch-action: none;
+
+  &__logo {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 200px;
+    height: 100px;
+    z-index: 2;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+  }
+
+  &__content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    padding: 16px;
+    text-align: center;
+    z-index: 1;
+
+    h1 {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 700;
+    }
+  }
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
