@@ -88,9 +88,17 @@ const TestPage = () => {
             <p className="test-page__eyebrow">Hoàn thành</p>
             <h1 className="test-page__title">Kết quả bài test</h1>
             <p className="test-page__subtitle">
-              Điểm: <strong>{done.score}/{placementTest.scoring.max_score}</strong>
+              Điểm bài test:{' '}
+              <strong>
+                {done.score}/{placementTest.scoring.max_score}
+              </strong>{' '}
+              (chỉ để xếp level)
             </p>
             <p className="test-page__level">Level: {done.level}</p>
+            <p className="test-page__subtitle">
+              Điểm thưởng bắt đầu từ <strong>0</strong>. Làm xong bài tập tuần
+              sẽ +1 điểm.
+            </p>
             <Button
               className="btn-wood test-page__submit"
               onClick={() => navigate('/', { replace: true })}

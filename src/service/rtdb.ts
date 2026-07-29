@@ -10,7 +10,10 @@ export type UserProfile = {
   /** Không lưu password — Firebase Auth quản lý */
   hasCompletedTest: boolean
   level: string | null
-  score?: number
+  /** Điểm thưởng (mặc định 0). +1 khi hoàn thành bài tập tuần */
+  score: number
+  /** Điểm bài test đầu vào (chỉ để xếp level, không dùng làm score) */
+  testScore?: number
   createdAt: number
   updatedAt?: number
   lastLoginAt?: number
@@ -24,7 +27,7 @@ export function toStoredUser(profile: UserProfile): StoredUser {
     email: profile.email,
     hasCompletedTest: Boolean(profile.hasCompletedTest),
     level: profile.level ?? null,
-    score: profile.score,
+    score: Number(profile.score) || 0,
   }
 }
 
@@ -47,10 +50,29 @@ export async function getRtdbUserProfile(uid: string) {
   const snap = await get(ref(rtdb, `users/${uid}`))
   if (!snap.exists()) return null
   const val = snap.val() as UserProfile
+
+  let score = Number(val.score) || 0
+  let testScore =
+    val.testScore === undefined || val.testScore === null
+      ? undefined
+      : Number(val.testScore)
+
+  // Migrate: chỉ khi chưa có testScore và chưa làm bài tuần nào trên map
+  if (val.hasCompletedTest && testScore === undefined && score > 0) {
+    const mapSnap = await get(ref(rtdb, `users/${uid}/mapProgress`))
+    if (!mapSnap.exists()) {
+      testScore = score
+      score = 0
+      await updateRtdbUserProfile(uid, { testScore, score: 0 })
+    }
+  }
+
   return {
     ...val,
     hasCompletedTest: Boolean(val.hasCompletedTest),
     level: val.level ?? null,
+    score,
+    testScore,
   }
 }
 
@@ -61,16 +83,18 @@ export async function savePlacementTestResult(
   await updateRtdbUserProfile(uid, {
     hasCompletedTest: true,
     level: result.level,
-    score: result.score,
+    testScore: result.score,
+    // Sau bài test: điểm thưởng = 0; +1 khi hoàn thành bài tập tuần
+    score: 0,
   })
 }
 
-/** Cộng điểm vào users/{uid}.score (mặc định +1) */
+/** Cộng điểm vào users/{uid}.score (mặc định +1 khi xong bài tuần) */
 export async function addUserScore(uid: string, amount = 1) {
   const current = await getRtdbUserProfile(uid)
-  const nextScore = (current?.score || 0) + amount
-  await updateRtdbUserProfile(uid, { score: nextScore })
-  return nextScore
+  const nextScore = (Number(current?.score) || 0) + amount
+  await updateRtdbUserProfile(uid, { score: Math.max(0, nextScore) })
+  return Math.max(0, nextScore)
 }
 
 export async function isUsernameTaken(username: string) {
@@ -95,5 +119,6 @@ export async function listRtdbUsers(): Promise<UserProfile[]> {
     ...item,
     hasCompletedTest: Boolean(item.hasCompletedTest),
     level: item.level ?? null,
+    score: Number(item.score) || 0,
   }))
 }

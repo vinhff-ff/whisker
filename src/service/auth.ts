@@ -83,6 +83,7 @@ export async function registerWithEmail(
     username: username.toLowerCase(),
     hasCompletedTest: false,
     level: null,
+    score: 0,
     createdAt: Date.now(),
     lastLoginAt: Date.now(),
   }
@@ -120,6 +121,7 @@ export async function loginWithEmail(email: string, password: string) {
       username: username.toLowerCase(),
       hasCompletedTest: false,
       level: null,
+      score: 0,
       createdAt: Date.now(),
       lastLoginAt: Date.now(),
     }
@@ -158,6 +160,7 @@ export function subscribeAuth(callback: (user: AuthUser | null) => void): Unsubs
         username: username.toLowerCase(),
         hasCompletedTest: false,
         level: null,
+        score: 0,
         createdAt: Date.now(),
         lastLoginAt: Date.now(),
       }

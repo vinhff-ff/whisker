@@ -24,6 +24,7 @@ export function getUserFromStorage(): StoredUser | null {
       ...parsed,
       hasCompletedTest: Boolean(parsed.hasCompletedTest),
       level: parsed.level ?? null,
+      score: Number(parsed.score) || 0,
     }
   } catch {
     return null
