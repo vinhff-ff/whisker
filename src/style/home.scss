@@ -188,7 +188,7 @@
     width: 100%;
     margin-top: calc(var(--icon-size) * -0.1);
     padding: clamp(10px, 1.3vw, 16px) clamp(8px, 1.2vw, 14px);
-    font-size: clamp(11px, 1.4vw, 15px);
+    font-size: clamp(11px, 1.4vw, 20px);
     line-height: 1.15;
     border-width: 3px;
     border-radius: 10px;
@@ -356,7 +356,7 @@
   }
 
   .cta-col .btn-wood--cta {
-    font-size: clamp(10px, 2.8vw, 12px);
+    font-size: clamp(10px, 2.8vw, 15px);
     padding: 9px 5px;
     line-height: 1.2;
   }
