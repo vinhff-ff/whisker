@@ -322,13 +322,9 @@
 
     &.is-go {
       background: #c48a2e;
-      cursor: pointer;
+      cursor: default;
       border-color: rgba(255, 246, 208, 0.95);
-
-      &:hover:not(:disabled) {
-        background: #a87320;
-        transform: translateX(-50%) scale(1.08);
-      }
+      pointer-events: none;
 
       &::after {
         content: '';
@@ -666,6 +662,13 @@
     border: 1px solid rgba(74, 44, 20, 0.12);
     background: rgba(255, 255, 255, 0.5);
 
+    &--step {
+      position: relative;
+      padding-right: 116px;
+      padding-bottom: 12px;
+      min-height: 112px;
+    }
+
     strong {
       display: block;
       margin-bottom: 6px;
@@ -678,6 +681,7 @@
       white-space: pre-wrap;
       font-weight: 600;
       font-size: 0.9rem;
+      padding-right: 4px;
     }
 
     img {
@@ -695,6 +699,94 @@
     }
   }
 
+  &__proof {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    width: 100px;
+    height: 100px;
+    margin: 0;
+    padding: 0;
+    border-top: none;
+  }
+
+  &__proof-label {
+    display: none;
+  }
+
+  &__proof-upload {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    padding: 6px;
+    border-radius: 10px;
+    border: 2px dashed rgba(107, 52, 16, 0.35);
+    background: rgba(255, 246, 208, 0.55);
+    color: #6b3410;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.25;
+    cursor: pointer;
+    text-align: center;
+
+    input {
+      display: none;
+    }
+
+    &:hover {
+      border-color: #c8821e;
+      background: rgba(255, 226, 122, 0.45);
+    }
+
+    &.is-busy {
+      opacity: 0.7;
+      cursor: wait;
+    }
+  }
+
+  &__proof-preview {
+    position: relative;
+    width: 100px;
+    height: 100px;
+
+    img {
+      width: 100px;
+      height: 100px;
+      max-height: none;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid rgba(74, 44, 20, 0.15);
+    }
+  }
+
+  &__proof-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    appearance: none;
+    border: none;
+    background: rgba(139, 30, 30, 0.85);
+    color: #fff;
+    font: inherit;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    line-height: 1.2;
+  }
+
+  &__hint {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(74, 44, 20, 0.7);
+  }
+
   &__video {
     position: relative;
     width: 100%;
@@ -709,6 +801,24 @@
       width: 100%;
       height: 100%;
       border: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    &__block--step {
+      padding-right: 12px;
+      padding-bottom: 12px;
+      min-height: 0;
+    }
+
+    &__proof {
+      position: relative;
+      right: auto;
+      top: auto;
+      transform: none;
+      width: 100px;
+      height: 100px;
+      margin: 10px 0 0;
     }
   }
 }

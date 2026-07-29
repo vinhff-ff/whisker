@@ -28,22 +28,61 @@ export type MapStepProgress = {
   updatedAt: number
 }
 
+/** Chuẩn hóa danh sách tuần có bài (số nguyên ≥ 1, sort tăng dần). */
+export function normalizeAvailableWeeks(availableWeeks: Iterable<number>): number[] {
+  return [...new Set([...availableWeeks].map(Number))]
+    .filter((w) => Number.isFinite(w) && w >= 1)
+    .sort((a, b) => a - b)
+}
+
+/** Firebase đôi khi trả steps dạng array — chỉ giữ key tuần "1"…"4" = true. */
+export function normalizeDoneSteps(
+  raw: Record<string, boolean> | boolean[] | null | undefined,
+): Record<string, boolean> {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: Record<string, boolean> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    const week = Number(key)
+    if (!Number.isFinite(week) || week < 1 || week > 4) continue
+    if (value) out[String(week)] = true
+  }
+  return out
+}
+
+/**
+ * Chỉ giữ chuỗi hoàn thành liên tiếp từ tuần có bài đầu tiên.
+ * Tránh tick “nhảy cóc” làm mở khóa mọi tuần sau.
+ */
+export function sanitizeSequentialDone(
+  done: Record<string, boolean>,
+  availableWeeks: Iterable<number>,
+): Record<string, boolean> {
+  const available = normalizeAvailableWeeks(availableWeeks)
+  const cleaned: Record<string, boolean> = {}
+  for (const week of available) {
+    if (!done[String(week)]) break
+    if (!isWeekUnlocked(week, cleaned, available)) break
+    cleaned[String(week)] = true
+  }
+  return cleaned
+}
+
 /**
  * Tuần mở khi:
  * - Admin đã có bài học cho tuần đó
- * - Các tuần trước (có bài) đã hoàn thành
+ * - Mọi tuần có bài đứng trước đã hoàn thành (theo thứ tự tuần)
  */
 export function isWeekUnlocked(
   week: number,
   done: Record<string, boolean>,
   availableWeeks: Iterable<number>,
 ): boolean {
-  const available = new Set(availableWeeks)
-  if (!available.has(week)) return false
+  const available = normalizeAvailableWeeks(availableWeeks)
+  if (!available.includes(week)) return false
 
-  for (let prev = 1; prev < week; prev += 1) {
-    if (!available.has(prev)) continue
-    if (!done[String(prev)]) return false
+  const index = available.indexOf(week)
+  for (let i = 0; i < index; i += 1) {
+    if (!done[String(available[i])]) return false
   }
   return true
 }
@@ -67,7 +106,11 @@ export async function getMapProgress(
     updatedAt?: number
   }
   return {
-    steps: val.steps && typeof val.steps === 'object' ? val.steps : {},
+    steps: normalizeDoneSteps(
+      val.steps && typeof val.steps === 'object'
+        ? (val.steps as Record<string, boolean>)
+        : {},
+    ),
     quizRewards:
       val.quizRewards && typeof val.quizRewards === 'object'
         ? val.quizRewards
@@ -84,11 +127,16 @@ export async function completeMapWeek(
   week: number,
   availableWeeks: Iterable<number>,
 ) {
+  const available = normalizeAvailableWeeks(availableWeeks)
   const current = await getMapProgress(uid, level, month)
-  if (!isWeekUnlocked(week, current.steps, availableWeeks)) {
+  const stepsSoFar = sanitizeSequentialDone(current.steps, available)
+  if (!isWeekUnlocked(week, stepsSoFar, available)) {
     throw new Error('Tuần này chưa được mở khóa.')
   }
-  const steps = { ...current.steps, [String(week)]: true }
+  const steps = sanitizeSequentialDone(
+    { ...stepsSoFar, [String(week)]: true },
+    available,
+  )
   const payload: MapStepProgress = {
     steps,
     quizRewards: current.quizRewards || {},

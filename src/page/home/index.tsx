@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import Bg from '../../assets/bg.png'
+import Bg from '../../assets/bgnew.jpg'
 import Logo from '../../assets/logo.png'
 import Map from '../../assets/map.png'
 import Mouse from '../../assets/mouse.png'
@@ -18,19 +18,19 @@ import {
 const CTA_ROWS = [
   {
     key: 'map',
-    label: 'Bản đồ',
+    label: 'Săn kho báu',
     icon: Map,
     iconAlt: 'map',
   },
   {
     key: 'chat',
-    label: 'Cộng đồng',
+    label: 'Diễn đàn học tập',
     icon: Congdong,
     iconAlt: 'community',
   },
   {
     key: 'wheel',
-    label: 'Vòng quay',
+    label: 'Vòng quay may mắn',
     icon: Vongquaymayman,
     iconAlt: 'lucky wheel',
   },
@@ -93,6 +93,12 @@ const Home = () => {
     } finally {
       setLoggingOut(false)
     }
+  }
+
+  function handleCtaClick(key: (typeof CTA_ROWS)[number]['key']) {
+    if (key === 'map') navigate('/map')
+    if (key === 'wheel') navigate('/phanthuong')
+    if (key === 'chat') navigate('/community')
   }
 
   const showUser = hasSession || Boolean(user)
@@ -161,30 +167,30 @@ const Home = () => {
           )}
         </div>
 
-        <div className="home-hero__ctas">
+        {/* —— Khối 3 mục CTA, ngang hàng, icon trên - nút dưới, chung 1 nền pill —— */}
+        <div className="home-hero__ctas-panel">
           {CTA_ROWS.map((row) => (
-            <div
-              key={row.key}
-              className={`cta-row cta-row--${row.key}`}
-            >
-              <div className={`cta-row__shell cta-row__shell--${row.key}`}>
-                <Button
-                  className="btn-wood"
-                  onClick={() => {
-                    if (row.key === 'map') navigate('/map')
-                    if (row.key === 'wheel') navigate('/phanthuong')
-                    if (row.key === 'chat') navigate('/community')
-                  }}
-                >
-                  {row.label}
-                </Button>
-                <div className={`icon-pill icon-pill--${row.key}`}>
-                  <img src={row.icon} alt={row.iconAlt} />
-                </div>
+            <div key={row.key} className={`cta-col cta-col--${row.key}`}>
+              <div className={`cta-col__icon cta-col__icon--${row.key}`}>
+                <img src={row.icon} alt={row.iconAlt} />
               </div>
+              <Button
+                className="btn-wood btn-wood--cta"
+                onClick={() => handleCtaClick(row.key)}
+              >
+                {row.label}
+              </Button>
             </div>
           ))}
         </div>
+
+        {/* —— Nút "Bắt đầu" riêng, nằm dưới khối 3 mục —— */}
+        <Button
+          className="btn-wood btn-wood--start"
+          onClick={() => navigate('/map')}
+        >
+          Bắt đầu
+        </Button>
       </div>
     </div>
   )

@@ -2,8 +2,9 @@
   position: relative;
   width: 100%;
   min-height: 100dvh;
+  height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   background: #1a1008;
   overflow: hidden;
@@ -11,112 +12,74 @@
 }
 
 .home-hero {
+  --mascot-h: min(54vh, 560px);
+  --icon-size: clamp(88px, 11vw, 130px);
+
   position: relative;
   width: 100%;
-  max-width: 100vw;
-  aspect-ratio: 16 / 9;
+  height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(64px, 8vh) 16px max(20px, 3vh);
+  box-sizing: border-box;
 
-  // Keep 16:9 within viewport height without letterboxing crop
-  max-height: 100dvh;
-
-  @supports (height: 100dvh) {
-    width: min(100vw, calc(100dvh * 16 / 9));
-  }
-
-  // —— 1. Background (z-index: 0) ——
+  // —— 1. Background full màn ——
   &__bg {
     position: absolute;
     inset: 0;
     z-index: 0;
     background-repeat: no-repeat;
-    background-position: center;
+    background-position: center center;
     background-size: cover;
     pointer-events: none;
   }
 
-  // —— 2. Shovel slot (z-index: 4) — ready when cutout asset is added ——
-  &__shovel {
-    position: absolute;
-    top: 42%;
-    left: 75%;
-    width: 8%;
-    height: auto;
-    z-index: 4;
-    object-fit: contain;
-    pointer-events: none;
-    // Light from top-right → shadow bottom-left
-    filter: drop-shadow(-0.4% 0.6% 0.4% rgba(0, 0, 0, 0.45));
-  }
-
-  // —— 3. Mascot + banner (z-index: 5) ——
+  // —— 2. Mascot — panel đè ~30% chiều cao ảnh ——
   &__mascot,
   .mascot-whisker {
-    position: absolute;
-    top: 6%;
-    left: 40%;
-    width: 56%;
-    height: 82%;
-    z-index: 5;
-    object-fit: contain;
-    object-position: bottom center;
-    pointer-events: none;
-    // Soft contact shadow aligned with scene light (top-right → left)
-    filter: drop-shadow(-1.2% 1.5% 1.2% rgba(0, 0, 0, 0.4));
-  }
-
-  // —— 4. Floating icons around mascot (z-index: 6) ——
-  &__icon {
-    position: absolute;
-    z-index: 6;
+    position: relative;
+    width: min(52vw, 640px);
     height: auto;
+    max-height: var(--mascot-h);
+    margin: 0 auto;
+    /* 30% chiều cao mascot bị panel đè */
+    margin-bottom: calc(var(--mascot-h) * -0.3);
+    z-index: 2;
     object-fit: contain;
+    object-position: center bottom;
     pointer-events: none;
-    filter: drop-shadow(-0.5% 0.7% 0.5% rgba(0, 0, 0, 0.4));
-
-    &--key {
-      top: 12%;
-      left: 44%;
-      width: 4%;
-    }
-
-    &--gem {
-      top: 15%;
-      left: 62%;
-      width: 5%;
-    }
-
-    &--magnifier {
-      top: 30%;
-      left: 68%;
-      width: 5%;
-    }
+    filter: drop-shadow(-1% 1.2% 1% rgba(0, 0, 0, 0.4));
+    order: 1;
   }
 
-  // —— 5. Logo watermark (z-index: 10) ——
+  // —— 3. Logo watermark góc trên trái ——
   &__logo {
     position: absolute;
-    top: 3%;
-    left: 2%;
-    width: 12%;
+    top: clamp(10px, 2.5vh, 24px);
+    left: clamp(10px, 2vw, 20px);
+    width: clamp(48px, 9vw, 110px);
     height: auto;
     z-index: 10;
     object-fit: contain;
     pointer-events: none;
   }
 
-  // —— Login (z-index: 20) ——
+  // —— Login góc trên phải ——
   &__login {
     position: absolute;
-    top: 3%;
-    right: 2%;
+    top: clamp(10px, 2.5vh, 24px);
+    right: clamp(10px, 2vw, 20px);
     z-index: 20;
 
     .btn-wood--login {
       flex: none;
       max-width: none;
-      padding: clamp(16px, calc(1% + 10px), 30px) clamp(16px, 2.5%, 36px);
-      font-size: clamp(14px, 2vw, 22px);
+      padding: clamp(12px, calc(1% + 8px), 28px) clamp(14px, 2.5%, 36px);
+      font-size: clamp(13px, 2vw, 22px);
       border-radius: 10px;
       border-width: 3px;
 
@@ -146,6 +109,100 @@
       }
     }
   }
+
+  // —— 4. Khối 3 CTA (đè ~30% mascot) ——
+  &__ctas-panel {
+    position: relative;
+    z-index: 15;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(20px, 3.5vw, 48px);
+    width: min(90%, 960px);
+    margin: 0 auto;
+    padding: clamp(20px, 2.8vw, 36px) clamp(22px, 3.2vw, 44px);
+    border-radius: 32px;
+    background: rgba(70, 90, 110, 0.5);
+    box-shadow:
+      inset 0 2px 6px rgba(255, 255, 255, 0.12),
+      inset 0 -4px 10px rgba(0, 0, 0, 0.3),
+      0 6px 16px rgba(0, 0, 0, 0.35);
+    order: 2;
+    flex-shrink: 0;
+  }
+
+  // —— 5. Nút "Bắt đầu" ——
+  .btn-wood--start {
+    position: relative;
+    z-index: 15;
+    display: block;
+    width: fit-content;
+    margin: 22px auto 0;
+    padding: clamp(14px, 1.6vw, 22px) clamp(60px, 8vw, 110px);
+    font-size: clamp(20px, 3.2vw, 32px);
+    border-radius: 999px;
+    border-width: 3px;
+    order: 3;
+    flex-shrink: 0;
+
+    &::before {
+      top: 22px;
+      left: 6px;
+      right: 6px;
+      height: 42%;
+      border-radius: 999px;
+    }
+  }
+}
+
+.cta-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+
+  &__icon {
+    position: relative;
+    z-index: 1;
+    width: var(--icon-size);
+    height: var(--icon-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(-1px 2px 2px rgba(0, 0, 0, 0.35));
+    }
+  }
+
+  // Nút đè ~10% chiều cao icon
+  .btn-wood--cta {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    margin-top: calc(var(--icon-size) * -0.1);
+    padding: clamp(10px, 1.3vw, 16px) clamp(8px, 1.2vw, 14px);
+    font-size: clamp(11px, 1.4vw, 15px);
+    line-height: 1.15;
+    border-width: 3px;
+    border-radius: 10px;
+    white-space: normal;
+    text-align: center;
+
+    &::before {
+      top: 3px;
+      left: 4px;
+      right: 4px;
+      height: 40%;
+      border-radius: 6px 6px 20px 20px / 6px 6px 28px 28px;
+    }
+  }
 }
 
 .user-menu {
@@ -168,13 +225,11 @@
     padding: 0 10px;
     border: 3px solid #6b3410;
     border-radius: 10px;
-    background: linear-gradient(
-      180deg,
-      #ffe27a 0%,
-      #ffcf4d 40%,
-      #f5a623 75%,
-      #e8901a 100%
-    );
+    background: linear-gradient(180deg,
+        #ffe27a 0%,
+        #ffcf4d 40%,
+        #f5a623 75%,
+        #e8901a 100%);
     color: #6b3410;
     cursor: pointer;
     box-shadow:
@@ -241,190 +296,92 @@
   }
 }
 
-.home-hero {
-  // —— 6. CTA rows wrapper ——
-  &__ctas {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    z-index: 15;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 38%;
-    pointer-events: none;
-  }
-}
-
-.cta-row {
-  position: relative;
-  left: 0;
-  width: 100%;
-  pointer-events: auto;
-
-  // Pill shell: flat against left edge, rounded on the right
-  &__shell {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 28px 28px 28px 30px;
-    border-radius: 0 999px 999px 0;
-    box-shadow:
-      inset -2px 2px 6px rgba(255, 255, 255, 0.2),
-      inset 2px -2px 8px rgba(0, 0, 0, 0.35),
-      4px 4px 12px rgba(0, 0, 0, 0.35);
-
-    &--map {
-      background: rgba(94, 62, 32, 0.55);
-    }
-
-    &--chat {
-      background: rgba(30, 90, 160, 0.55);
-    }
-
-    &--wheel {
-
-      background: rgba(200, 90, 20, 0.55);
-    }
-  }
-
-  .btn-wood {
-    flex: 1 1 auto;
-    min-width: 0;
-    // Shorten button 50px; pill shell width stays the same
-    max-width: calc(100% - 96px - 4px - 50px);
-    padding: clamp(16px, calc(1% + 10px), 30px) clamp(18px, 4.5%, 52px);
-    font-size: clamp(18px, 3vw, 30px);
-    line-height: 1.1;
-    border-width: 3px;
-    border-radius: 10px;
-    box-shadow:
-      inset 0 2px 4px rgba(255, 255, 255, 0.75),
-      inset 0 -3px 6px rgba(139, 69, 19, 0.35),
-      0 4px 0 #6b3410,
-      0 6px 8px rgba(0, 0, 0, 0.25);
-
-    &::before {
-      top: 3px;
-      left: 4px;
-      right: 4px;
-      height: 40%;
-      border-radius: 6px 6px 20px 20px / 6px 6px 28px 28px;
-    }
-
-    &:hover:not(:disabled) {
-      box-shadow:
-        inset 0 2px 4px rgba(255, 255, 255, 0.75),
-        inset 0 -3px 6px rgba(139, 69, 19, 0.35),
-        0 3px 0 #6b3410,
-        0 5px 6px rgba(0, 0, 0, 0.25);
-    }
-
-    &:active:not(:disabled) {
-      box-shadow:
-        inset 0 2px 4px rgba(255, 255, 255, 0.75),
-        inset 0 -3px 6px rgba(139, 69, 19, 0.35),
-        0 0 0 #6b3410,
-        0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-  }
-}
-
-.icon-pill {
-  flex: 0 0 auto;
-  width: 96px;
-  height: 96px;
-  margin-left: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    filter: drop-shadow(-1px 2px 2px rgba(0, 0, 0, 0.35));
-  }
-}
-
-// —— Mobile < 768px: CTA stack below mascot, no overlap ——
+// —— Mobile / tablet hẹp ——
 @media (max-width: 767px) {
-  .home-page {
-    align-items: flex-start;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
   .home-hero {
-    width: 100%;
-    max-width: 100%;
-    aspect-ratio: auto;
-    max-height: none;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
+    --mascot-h: min(42vh, 340px);
+    --icon-size: clamp(72px, 22vw, 100px);
 
-    &__bg {
-      position: absolute;
-      inset: 0;
-    }
+    padding: max(72px, 11vh) 14px max(16px, 2.5vh);
 
     &__mascot,
     .mascot-whisker {
-      position: relative;
-      top: auto;
-      left: auto;
-      width: 72%;
-      height: auto;
-      max-height: 42vh;
-      margin: auto auto 16px;
-      z-index: 5;
-      display: block;
+      width: min(86vw, 360px);
+      max-height: var(--mascot-h);
+      margin-bottom: calc(var(--mascot-h) * -0.3);
     }
 
     &__logo {
-      width: 28%;
-      top: 2%;
-      left: 3%;
+      width: clamp(52px, 18vw, 72px);
+      top: max(12px, env(safe-area-inset-top, 0px) + 8px);
+      left: 12px;
     }
 
     &__login {
-      top: 2%;
-      right: 3%;
+      top: max(12px, env(safe-area-inset-top, 0px) + 8px);
+      right: 12px;
+
+      .btn-wood--login {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+
+      .btn-wood--user {
+        max-width: min(120px, 28vw);
+      }
     }
 
-    &__icon {
-      display: none; // baked into mascot asset; hide empty slots on mobile
+    &__ctas-panel {
+      width: min(96%, 440px);
+      gap: 10px;
+      padding: 16px 12px;
+      border-radius: 24px;
     }
 
-    &__ctas {
-      position: relative;
-      top: auto;
-      left: auto;
-      transform: none;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      width: 92%;
-      padding: 0 0 6%;
-      margin-top: 0;
-      z-index: 15;
+    .btn-wood--start {
+      margin-top: 16px;
+      padding: 12px 48px;
+      font-size: 18px;
     }
   }
 
-  .cta-row {
-    position: relative;
-    width: 100%;
+  .cta-col .btn-wood--cta {
+    font-size: clamp(10px, 2.8vw, 12px);
+    padding: 9px 5px;
+    line-height: 1.2;
+  }
 
-    &__shell {
-      border-radius: 0 999px 999px 0;
-      padding: 20px 22px 20px 24px;
+  .user-menu__arrow {
+    min-width: 36px;
+    padding: 0 8px;
+  }
+}
+
+// Màn rất thấp (landscape phone / short viewport)
+@media (max-width: 767px) and (max-height: 640px) {
+  .home-hero {
+    --mascot-h: min(34vh, 220px);
+    --icon-size: clamp(56px, 16vw, 78px);
+
+    padding: max(56px, 8vh) 12px 12px;
+    justify-content: flex-start;
+    overflow-y: auto;
+
+    &__mascot,
+    .mascot-whisker {
+      width: min(58vw, 220px);
+      max-height: var(--mascot-h);
+      margin-bottom: calc(var(--mascot-h) * -0.3);
+    }
+
+    &__ctas-panel {
+      padding: 12px 8px;
+    }
+
+    .btn-wood--start {
+      margin-top: 12px;
+      padding: 10px 36px;
+      font-size: 16px;
     }
   }
 }

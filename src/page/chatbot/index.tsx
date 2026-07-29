@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import MouseIcon from '../../assets/mouse.png'
+import { MessageFilled } from '@ant-design/icons'
 import { buildWhiskerSystemPrompt } from '../../data/whiskerSite'
 import Button from '../../ui/button'
-
+import Mouse from '../../assets/mouse.png'
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
   'gemini-2.0-flash',
@@ -203,14 +203,14 @@ const Chatbot = () => {
         type="button"
         aria-label="Mở chat Whisker"
       >
-        <img src={MouseIcon} alt="Whisker" />
+        <MessageFilled style={{ fontSize: 24 , color: '#6b3410' }} />
       </button>
 
       {isOpen ? (
         <div className="chatbot-window" role="dialog" aria-label="Chatbot Whisker">
           <div className="chatbot-header">
             <div className="chatbot-header-info">
-              <img src={MouseIcon} alt="" className="chatbot-avatar" />
+              <img src={Mouse} alt="" className="chatbot-avatar" />
               <div>
                 <h3>Whisker</h3>
                 <span className="chatbot-status">

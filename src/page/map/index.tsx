@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Drawer, message } from 'antd'
 import PaperBg from '../../assets/papperbg.png'
@@ -7,6 +7,7 @@ import Thu2Icon from '../../assets/thu2.png'
 import IslandIcon from '../../assets/island.png'
 import KhoBauIcon from '../../assets/khobau.png'
 import Button from '../../ui/button'
+import { CameraFilled } from '@ant-design/icons'
 import {
   listGuides,
   type GuideBlock,
@@ -19,8 +20,18 @@ import {
   getCurrentMonth,
   getMapProgress,
   isWeekUnlocked,
+  normalizeAvailableWeeks,
   resolveMapLevel,
+  sanitizeSequentialDone,
 } from '../../service/map'
+import {
+  fileToBase64,
+  getWeekProofs,
+  hasAllStepProofs,
+  removeStepProof,
+  setStepProof,
+  type WeekProofs,
+} from '../../service/mapProofs'
 import {
   addUserScore,
   getRtdbUserProfile,
@@ -82,7 +93,6 @@ const MapPage = () => {
   const [quizRewards, setQuizRewards] = useState<Record<string, boolean>>({})
   const [guides, setGuides] = useState<GuideItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [savingWeek, setSavingWeek] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null)
   const [gameWeek, setGameWeek] = useState<number | null>(null)
@@ -90,6 +100,8 @@ const MapPage = () => {
   const [submittingQuiz, setSubmittingQuiz] = useState(false)
   const [totalScore, setTotalScore] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const [weekProofs, setWeekProofs] = useState<WeekProofs>({})
+  const [uploadingStepId, setUploadingStepId] = useState<string | null>(null)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)')
@@ -112,13 +124,58 @@ const MapPage = () => {
           listGuides(),
         ])
         if (!alive) return
-        setDone(progress.steps || {})
-        setQuizRewards(progress.quizRewards || {})
-        setGuides(
-          allGuides.filter(
-            (g) => g.level === level && g.month === currentMonth,
-          ),
+
+        const monthGuides = allGuides.filter(
+          (g) => g.level === level && g.month === currentMonth,
         )
+        setGuides(monthGuides)
+
+        const available = normalizeAvailableWeeks(
+          monthGuides.map((g) => Number(g.week)),
+        )
+
+        // Chỉ giữ chuỗi hoàn thành liên tiếp (bỏ tick nhảy cóc từ dữ liệu cũ)
+        const steps: Record<string, boolean> = sanitizeSequentialDone(
+          progress.steps || {},
+          available,
+        )
+
+        // Đồng bộ tick từ minh chứng local — dừng khi gặp tuần chưa đủ / chưa mở
+        for (const week of available) {
+          if (!isWeekUnlocked(week, steps, available)) break
+          if (steps[String(week)]) continue
+
+          const guide = monthGuides.find((g) => Number(g.week) === week)
+          if (!guide) break
+
+          const stepIds = (guide.guides || [])
+            .filter((b) => b.type === 'step' && b.id)
+            .map((b) => b.id)
+          const requiredIds =
+            stepIds.length > 0 ? stepIds : [`week-${week}`]
+          const proofs = getWeekProofs(user.uid, level, currentMonth, week)
+
+          if (!hasAllStepProofs(requiredIds, proofs)) {
+            // Tuần đang mở nhưng chưa đủ minh chứng → không xét tuần sau
+            break
+          }
+
+          steps[String(week)] = true
+          try {
+            await completeMapWeek(
+              user.uid,
+              level,
+              currentMonth,
+              week,
+              available,
+            )
+          } catch {
+            // giữ tick local
+          }
+        }
+
+        setDone(sanitizeSequentialDone(steps, available))
+        setQuizRewards(progress.quizRewards || {})
         setTotalScore(profile?.score || 0)
       } catch (err) {
         if (!alive) return
@@ -134,6 +191,15 @@ const MapPage = () => {
     }
   }, [ready, user, level, currentMonth, profile?.score])
 
+  // Load proofs khi mở panel tuần
+  useEffect(() => {
+    if (!user || selectedWeek === null) {
+      setWeekProofs({})
+      return
+    }
+    setWeekProofs(getWeekProofs(user.uid, level, currentMonth, selectedWeek))
+  }, [user, selectedWeek, level, currentMonth])
+
   const lessonByWeek = useMemo(() => {
     const map: Record<number, GuideItem | undefined> = {}
     for (const g of guides) {
@@ -144,9 +210,11 @@ const MapPage = () => {
 
   const availableWeeks = useMemo(
     () =>
-      Object.keys(lessonByWeek)
-        .map(Number)
-        .filter((w) => Boolean(lessonByWeek[w])),
+      normalizeAvailableWeeks(
+        Object.keys(lessonByWeek)
+          .map(Number)
+          .filter((w) => Boolean(lessonByWeek[w])),
+      ),
     [lessonByWeek],
   )
 
@@ -267,26 +335,83 @@ const MapPage = () => {
     </article>
   )
 
-  const markComplete = async (week: number, e: MouseEvent) => {
-    e.stopPropagation()
-    if (!user || savingWeek !== null) return
-    if (!isWeekUnlocked(week, done, availableWeeks)) return
-    if (done[String(week)]) return
+  const tryCompleteWeekFromProofs = async (
+    week: number,
+    proofs: WeekProofs,
+  ) => {
+    if (!user) return
+    const lesson = lessonByWeek[week]
+    if (!lesson) return
+    const stepIds = (lesson.guides || [])
+      .filter((b) => b.type === 'step' && b.id)
+      .map((b) => b.id)
 
-    setSavingWeek(week)
-    setError('')
-    setDone((prev) => ({ ...prev, [String(week)]: true }))
+    const requiredIds = stepIds.length > 0 ? stepIds : [`week-${week}`]
+    if (!hasAllStepProofs(requiredIds, proofs)) return
+    if (done[String(week)]) return
+    if (!isWeekUnlocked(week, done, availableWeeks)) return
+
     try {
       await completeMapWeek(user.uid, level, currentMonth, week, availableWeeks)
+      setDone((prev) =>
+        sanitizeSequentialDone(
+          { ...prev, [String(week)]: true },
+          availableWeeks,
+        ),
+      )
+      message.success(`Tuần ${week} đã hoàn thành!`)
     } catch (err) {
-      setDone((prev) => {
-        const next = { ...prev }
-        delete next[String(week)]
-        return next
-      })
-      setError(err instanceof Error ? err.message : 'Không lưu được tiến độ.')
+      message.error(
+        err instanceof Error ? err.message : 'Không hoàn thành được tuần.',
+      )
+    }
+  }
+
+  const handleProofUpload = async (stepId: string, file: File | null) => {
+    if (!user || selectedWeek === null || !file) return
+    setUploadingStepId(stepId)
+    setError('')
+    try {
+      const dataUrl = await fileToBase64(file)
+      const next = setStepProof(
+        user.uid,
+        level,
+        currentMonth,
+        selectedWeek,
+        stepId,
+        dataUrl,
+      )
+      setWeekProofs(next)
+      await tryCompleteWeekFromProofs(selectedWeek, next)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Upload thất bại.')
     } finally {
-      setSavingWeek(null)
+      setUploadingStepId(null)
+    }
+  }
+
+  const handleProofRemove = (stepId: string) => {
+    if (!user || selectedWeek === null) return
+    const next = removeStepProof(
+      user.uid,
+      level,
+      currentMonth,
+      selectedWeek,
+      stepId,
+    )
+    setWeekProofs(next)
+    const lesson = lessonByWeek[selectedWeek]
+    const stepIds = (lesson?.guides || [])
+      .filter((b) => b.type === 'step' && b.id)
+      .map((b) => b.id)
+    const requiredIds =
+      stepIds.length > 0 ? stepIds : [`week-${selectedWeek}`]
+    if (!hasAllStepProofs(requiredIds, next)) {
+      setDone((prev) => {
+        const copy = { ...prev }
+        delete copy[String(selectedWeek)]
+        return copy
+      })
     }
   }
 
@@ -297,19 +422,64 @@ const MapPage = () => {
 
   const completedCount = availableWeeks.filter((w) => done[String(w)]).length
 
+  const renderProofUploader = (stepId: string, label: string) => {
+    const preview = weekProofs[stepId]
+    const busy = uploadingStepId === stepId
+    return (
+      <div className="map-lesson__proof">
+        <p className="map-lesson__proof-label">{label}</p>
+        {preview ? (
+          <div className="map-lesson__proof-preview">
+            <img src={preview} alt="Minh chứng" />
+            <button
+              type="button"
+              className="map-lesson__proof-remove"
+              onClick={() => handleProofRemove(stepId)}
+              disabled={busy}
+            >
+              Xóa
+            </button>
+          </div>
+        ) : (
+          <label className={`map-lesson__proof-upload${busy ? ' is-busy' : ''}`}>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null
+                void handleProofUpload(stepId, file)
+                e.target.value = ''
+              }}
+            />
+            {busy ? '...' : <CameraFilled style={{ fontSize: 24 , color: '#6b3410' }} />}
+          </label>
+        )}
+      </div>
+    )
+  }
+
   const renderGuideBlock = (block: GuideBlock, index: number) => {
     if (block.type === 'step') {
+      const stepNo =
+        (activeLesson?.guides || [])
+          .filter((b) => b.type === 'step')
+          .findIndex((b) => b.id === block.id) + 1
       return (
-        <div key={block.id} className="map-lesson__block">
-          <strong>Bước {index + 1}</strong>
+        <div key={block.id} className="map-lesson__block map-lesson__block--step">
+          <strong>Bước {stepNo || index + 1}</strong>
           <p>{block.value || '—'}</p>
+          {renderProofUploader(
+            block.id,
+            `Minh chứng bước ${stepNo || index + 1}`,
+          )}
         </div>
       )
     }
     if (block.type === 'image') {
       return block.value ? (
         <div key={block.id} className="map-lesson__block">
-          <strong>Ảnh {index + 1}</strong>
           <img src={block.value} alt={`Hướng dẫn ${index + 1}`} />
         </div>
       ) : null
@@ -317,7 +487,6 @@ const MapPage = () => {
     const embed = youtubeEmbedUrl(block.value)
     return (
       <div key={block.id} className="map-lesson__block">
-        <strong>Video {index + 1}</strong>
         {embed ? (
           <div className="map-lesson__video">
             <iframe
@@ -388,7 +557,6 @@ const MapPage = () => {
                 const hasLesson = Boolean(lessonByWeek[node.week])
                 const unlocked = isWeekUnlocked(node.week, done, availableWeeks)
                 const isDone = Boolean(done[String(node.week)])
-                const busy = savingWeek === node.week
                 const active = selectedWeek === node.week
                 const locked = !unlocked
                 const left = isMobile ? node.mx : node.x
@@ -402,7 +570,6 @@ const MapPage = () => {
                       unlocked ? 'is-unlocked' : 'is-locked',
                       isDone ? 'is-done' : '',
                       active ? 'is-active' : '',
-                      busy ? 'is-busy' : '',
                       !hasLesson ? 'is-empty-lesson' : '',
                     ]
                       .filter(Boolean)
@@ -418,18 +585,21 @@ const MapPage = () => {
                     </span>
 
                     {unlocked ? (
-                      <button
-                        type="button"
+                      <span
                         className={`map-stage__status${isDone ? ' is-tick' : ' is-go'}`}
-                        onClick={(e) => {
-                          if (!isDone) void markComplete(node.week, e)
-                        }}
-                        disabled={busy || isDone}
-                        title={isDone ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}
-                        aria-label={isDone ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}
+                        title={
+                          isDone
+                            ? 'Đã hoàn thành (đủ minh chứng)'
+                            : 'Upload minh chứng các bước để hoàn thành'
+                        }
+                        aria-label={
+                          isDone
+                            ? 'Đã hoàn thành'
+                            : 'Chưa đủ minh chứng'
+                        }
                       >
                         {isDone ? '✓' : null}
-                      </button>
+                      </span>
                     ) : (
                       <span
                         className="map-stage__status is-lock"
@@ -506,12 +676,42 @@ const MapPage = () => {
               ) : (
                 <div className="map-lesson">
                   {(activeLesson.guides || []).length === 0 ? (
-                    <div className="map-panel__empty">Chưa có hướng dẫn.</div>
+                    <div className="map-lesson__guides">
+                      <div className="map-panel__empty">Chưa có hướng dẫn chi tiết.</div>
+                      <div className="map-lesson__block map-lesson__block--step">
+                        <strong>Minh chứng hoàn thành tuần</strong>
+                        <p>Upload 1 ảnh minh chứng để hoàn thành tuần này.</p>
+                        {renderProofUploader(
+                          `week-${selectedWeek}`,
+                          'Minh chứng tuần',
+                        )}
+                      </div>
+                    </div>
                   ) : (
                     <div className="map-lesson__guides">
                       {activeLesson.guides.map((block, index) =>
                         renderGuideBlock(block, index),
                       )}
+                      {(activeLesson.guides || []).every(
+                        (b) => b.type !== 'step',
+                      ) ? (
+                        <div className="map-lesson__block map-lesson__block--step">
+                          <strong>Minh chứng hoàn thành tuần</strong>
+                          <p>
+                            Tuần này chưa có bước hướng dẫn. Hãy upload 1 ảnh
+                            minh chứng để hoàn thành tuần.
+                          </p>
+                          {renderProofUploader(
+                            `week-${selectedWeek}`,
+                            'Minh chứng tuần',
+                          )}
+                        </div>
+                      ) : null}
+                      <p className="map-lesson__hint">
+                        {done[String(selectedWeek)]
+                          ? '✓ Đã đủ minh chứng — tuần đã hoàn thành.'
+                          : 'Upload đủ ảnh minh chứng cho mọi bước để tự hoàn thành tuần.'}
+                      </p>
                     </div>
                   )}
                 </div>
