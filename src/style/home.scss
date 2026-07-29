@@ -333,7 +333,11 @@
 
     &__ctas-panel {
       width: min(96%, 440px);
-      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      align-content: center;
+      gap: 16px 12px;
       padding: 16px 12px;
       border-radius: 24px;
     }
@@ -343,6 +347,12 @@
       padding: 12px 48px;
       font-size: 18px;
     }
+  }
+
+  .cta-col {
+    flex: 0 1 calc(50% - 8px);
+    max-width: 168px;
+    min-width: 120px;
   }
 
   .cta-col .btn-wood--cta {
