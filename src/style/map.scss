@@ -73,13 +73,15 @@
     }
 
     &__sheet {
-      flex: 7 1 0;
-      width: 100%;
-      max-width: none;
-      min-height: 0;
-      position: relative;
-      overflow: hidden;
-      container-type: size;
+ flex: 7 1 0;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  container-type: size;
+  padding-top: 44px;      /* chừa chỗ cho nút Quay lại */
+  box-sizing: border-box;
     }
 
     /*
@@ -87,17 +89,16 @@
       Icon bù -90° để vẫn đứng thẳng theo màn hình.
     */
     &__plane {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      /* fallback nếu không hỗ trợ cqi */
-      width: calc((100dvh - (var(--map-edge) * 2) - 8px) * 0.7);
-      height: calc(100vw - (var(--map-edge) * 2));
-      width: 100cqh;
-      height: 100cqw;
-      max-width: none;
-      transform: translate(-50%, -50%) rotate(90deg);
-      transform-origin: center center;
+  position: absolute;
+  top: calc(50% + 22px);  /* = padding-top / 2, để tái căn giữa phần còn lại */
+  left: 50%;
+  width: calc((100dvh - (var(--map-edge) * 2) - 8px) * 0.7);
+  height: calc(100vw - (var(--map-edge) * 2));
+  width: 100cqh;
+  height: 100cqw;
+  max-width: none;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center center;
     }
 
     &__paper {
@@ -901,9 +902,12 @@
   min-height: 0;
 
   @media (max-width: 640px) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
     gap: 6px;
   }
-}
+} 
 
 .map-page__side-item.treasure-btn {
   position: relative;

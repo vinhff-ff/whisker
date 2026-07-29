@@ -445,7 +445,6 @@ const MapPage = () => {
             <input
               type="file"
               accept="image/*"
-              capture="environment"
               disabled={busy}
               onChange={(e) => {
                 const file = e.target.files?.[0] || null
@@ -453,7 +452,7 @@ const MapPage = () => {
                 e.target.value = ''
               }}
             />
-            {busy ? '...' : <CameraFilled style={{ fontSize: 24 , color: '#6b3410' }} />}
+            {busy ? '...' : <CameraFilled style={{ fontSize: 24, color: '#6b3410' }} />}
           </label>
         )}
       </div>
