@@ -2,52 +2,429 @@
   position: relative;
   width: 100%;
   min-height: 100dvh;
-  height: 100dvh;
-
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  background: #1a1008;
+  overflow: hidden;
+  touch-action: manipulation;
+}
 
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-
+.home-hero {
+  position: relative;
+  width: 100%;
+  max-width: 100vw;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
 
-  // Chặn cuộn và zoom trên mobile
-  touch-action: none;
+  // Keep 16:9 within viewport height without letterboxing crop
+  max-height: 100dvh;
 
-  &__logo {
+  @supports (height: 100dvh) {
+    width: min(100vw, calc(100dvh * 16 / 9));
+  }
+
+  // —— 1. Background (z-index: 0) ——
+  &__bg {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    width: 200px;
-    height: 100px;
-    z-index: 2;
+    inset: 0;
+    z-index: 0;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    pointer-events: none;
+  }
 
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
+  // —— 2. Shovel slot (z-index: 4) — ready when cutout asset is added ——
+  &__shovel {
+    position: absolute;
+    top: 42%;
+    left: 75%;
+    width: 8%;
+    height: auto;
+    z-index: 4;
+    object-fit: contain;
+    pointer-events: none;
+    // Light from top-right → shadow bottom-left
+    filter: drop-shadow(-0.4% 0.6% 0.4% rgba(0, 0, 0, 0.45));
+  }
+
+  // —— 3. Mascot + banner (z-index: 5) ——
+  &__mascot,
+  .mascot-whisker {
+    position: absolute;
+    top: 6%;
+    left: 40%;
+    width: 56%;
+    height: 82%;
+    z-index: 5;
+    object-fit: contain;
+    object-position: bottom center;
+    pointer-events: none;
+    // Soft contact shadow aligned with scene light (top-right → left)
+    filter: drop-shadow(-1.2% 1.5% 1.2% rgba(0, 0, 0, 0.4));
+  }
+
+  // —— 4. Floating icons around mascot (z-index: 6) ——
+  &__icon {
+    position: absolute;
+    z-index: 6;
+    height: auto;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(-0.5% 0.7% 0.5% rgba(0, 0, 0, 0.4));
+
+    &--key {
+      top: 12%;
+      left: 44%;
+      width: 4%;
+    }
+
+    &--gem {
+      top: 15%;
+      left: 62%;
+      width: 5%;
+    }
+
+    &--magnifier {
+      top: 30%;
+      left: 68%;
+      width: 5%;
     }
   }
 
-  &__content {
+  // —— 5. Logo watermark (z-index: 10) ——
+  &__logo {
+    position: absolute;
+    top: 3%;
+    left: 2%;
+    width: 12%;
+    height: auto;
+    z-index: 10;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  // —— Login (z-index: 20) ——
+  &__login {
+    position: absolute;
+    top: 3%;
+    right: 2%;
+    z-index: 20;
+
+    .btn-wood--login {
+      flex: none;
+      max-width: none;
+      padding: clamp(16px, calc(1% + 10px), 30px) clamp(16px, 2.5%, 36px);
+      font-size: clamp(14px, 2vw, 22px);
+      border-radius: 10px;
+      border-width: 3px;
+
+      &::before {
+        top: 3px;
+        left: 4px;
+        right: 4px;
+        height: 40%;
+        border-radius: 6px 6px 20px 20px / 6px 6px 28px 28px;
+      }
+    }
+
+    .btn-wood--user {
+      opacity: 1;
+      cursor: default;
+      pointer-events: none;
+      max-width: min(180px, 34vw);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      span {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+}
+
+.user-menu {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  &__trigger {
     display: flex;
-    justify-content: center;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  &__arrow {
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    padding: 0 10px;
+    border: 3px solid #6b3410;
+    border-radius: 10px;
+    background: linear-gradient(
+      180deg,
+      #ffe27a 0%,
+      #ffcf4d 40%,
+      #f5a623 75%,
+      #e8901a 100%
+    );
+    color: #6b3410;
+    cursor: pointer;
+    box-shadow:
+      inset 0 2px 4px rgba(255, 255, 255, 0.75),
+      inset 0 -3px 6px rgba(139, 69, 19, 0.35),
+      0 4px 0 #6b3410;
+    transition: transform 0.12s ease;
 
+    svg {
+      transition: transform 0.2s ease;
+    }
+
+    &.is-open svg {
+      transform: rotate(180deg);
+    }
+
+    &:hover {
+      transform: translateY(1px);
+    }
+
+    &:active {
+      transform: translateY(3px);
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.75),
+        inset 0 -3px 6px rgba(139, 69, 19, 0.35),
+        0 0 0 #6b3410;
+    }
+  }
+
+  &__dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 140px;
+    padding: 6px;
+    border-radius: 12px;
+    border: 2px solid rgba(107, 52, 16, 0.45);
+    background: rgba(255, 246, 208, 0.96);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    z-index: 30;
+  }
+
+  &__item {
     width: 100%;
-    padding: 16px;
-    text-align: center;
-    z-index: 1;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #6b3410;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
 
-    h1 {
-      margin: 0;
-      color: #fff;
-      font-size: clamp(2rem, 5vw, 4rem);
-      font-weight: 700;
+    &:hover:not(:disabled) {
+      background: rgba(200, 130, 30, 0.18);
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.home-hero {
+  // —— 6. CTA rows wrapper ——
+  &__ctas {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 15;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 38%;
+    pointer-events: none;
+  }
+}
+
+.cta-row {
+  position: relative;
+  left: 0;
+  width: 100%;
+  pointer-events: auto;
+
+  // Pill shell: flat against left edge, rounded on the right
+  &__shell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 28px 28px 28px 30px;
+    border-radius: 0 999px 999px 0;
+    box-shadow:
+      inset -2px 2px 6px rgba(255, 255, 255, 0.2),
+      inset 2px -2px 8px rgba(0, 0, 0, 0.35),
+      4px 4px 12px rgba(0, 0, 0, 0.35);
+
+    &--map {
+      background: rgba(94, 62, 32, 0.55);
+    }
+
+    &--chat {
+      background: rgba(30, 90, 160, 0.55);
+    }
+
+    &--wheel {
+
+      background: rgba(200, 90, 20, 0.55);
+    }
+  }
+
+  .btn-wood {
+    flex: 1 1 auto;
+    min-width: 0;
+    // Shorten button 50px; pill shell width stays the same
+    max-width: calc(100% - 96px - 4px - 50px);
+    padding: clamp(16px, calc(1% + 10px), 30px) clamp(18px, 4.5%, 52px);
+    font-size: clamp(18px, 3vw, 30px);
+    line-height: 1.1;
+    border-width: 3px;
+    border-radius: 10px;
+    box-shadow:
+      inset 0 2px 4px rgba(255, 255, 255, 0.75),
+      inset 0 -3px 6px rgba(139, 69, 19, 0.35),
+      0 4px 0 #6b3410,
+      0 6px 8px rgba(0, 0, 0, 0.25);
+
+    &::before {
+      top: 3px;
+      left: 4px;
+      right: 4px;
+      height: 40%;
+      border-radius: 6px 6px 20px 20px / 6px 6px 28px 28px;
+    }
+
+    &:hover:not(:disabled) {
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.75),
+        inset 0 -3px 6px rgba(139, 69, 19, 0.35),
+        0 3px 0 #6b3410,
+        0 5px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    &:active:not(:disabled) {
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.75),
+        inset 0 -3px 6px rgba(139, 69, 19, 0.35),
+        0 0 0 #6b3410,
+        0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.icon-pill {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
+  margin-left: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(-1px 2px 2px rgba(0, 0, 0, 0.35));
+  }
+}
+
+// —— Mobile < 768px: CTA stack below mascot, no overlap ——
+@media (max-width: 767px) {
+  .home-page {
+    align-items: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .home-hero {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: auto;
+    max-height: none;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+
+    &__bg {
+      position: absolute;
+      inset: 0;
+    }
+
+    &__mascot,
+    .mascot-whisker {
+      position: relative;
+      top: auto;
+      left: auto;
+      width: 72%;
+      height: auto;
+      max-height: 42vh;
+      margin: auto auto 16px;
+      z-index: 5;
+      display: block;
+    }
+
+    &__logo {
+      width: 28%;
+      top: 2%;
+      left: 3%;
+    }
+
+    &__login {
+      top: 2%;
+      right: 3%;
+    }
+
+    &__icon {
+      display: none; // baked into mascot asset; hide empty slots on mobile
+    }
+
+    &__ctas {
+      position: relative;
+      top: auto;
+      left: auto;
+      transform: none;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 92%;
+      padding: 0 0 6%;
+      margin-top: 0;
+      z-index: 15;
+    }
+  }
+
+  .cta-row {
+    position: relative;
+    width: 100%;
+
+    &__shell {
+      border-radius: 0 999px 999px 0;
+      padding: 20px 22px 20px 24px;
     }
   }
 }
@@ -58,7 +435,6 @@ body,
   width: 100%;
   height: 100%;
   margin: 0;
-  overflow: hidden;
 }
 
 * {
