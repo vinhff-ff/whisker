@@ -1,13 +1,23 @@
 import { get, push, ref, remove, set, update } from 'firebase/database'
 import { rtdb } from './firebase'
 
-export type GuideBlockType = 'step' | 'image' | 'youtube'
+export type GuideBlockType =
+  | 'task'
+  | 'output'
+  | 'key'
+  | 'step'
+  | 'image'
+  | 'youtube'
 
 export type GuideBlock = {
   id: string
   type: GuideBlockType
-  /** step text / image url (or data-url) / youtube url */
+  /** Nội dung text (nhiệm vụ / output / key / bước) hoặc url ảnh/yt cũ */
   value: string
+  /** Ảnh demo minh họa cho nhiệm vụ */
+  imageValue?: string
+  /** Link YouTube demo cho nhiệm vụ */
+  youtubeValue?: string
 }
 
 export type QuestionType = 'letters' | 'choice' | 'short'
@@ -33,6 +43,12 @@ export type GuideItem = {
   level: number
   month: number
   week: number
+  monthDescription: string
+  weekDescription: string
+  /** Tiêu đề mục Nhiệm vụ */
+  tasksTitle: string
+  /** Tiêu đề mục Yêu cầu đầu ra */
+  outputsTitle: string
   guides: GuideBlock[]
   questions: GuideQuestion[]
   createdAt: number
@@ -46,6 +62,15 @@ export function createBlockId() {
 }
 
 export function createEmptyBlock(type: GuideBlockType): GuideBlock {
+  if (type === 'task') {
+    return {
+      id: createBlockId(),
+      type,
+      value: '',
+      imageValue: '',
+      youtubeValue: '',
+    }
+  }
   return { id: createBlockId(), type, value: '' }
 }
 
@@ -65,6 +90,39 @@ export function createEmptyQuestion(type: QuestionType): GuideQuestion {
     type,
     prompt: '',
     answer: '',
+  }
+}
+
+/** Id cần minh chứng học viên: yêu cầu đầu ra (output); fallback nhiệm vụ/bước cũ */
+export function getProofRequiredBlockIds(guides: GuideBlock[] | undefined): string[] {
+  const list = guides || []
+  const outputs = list.filter((b) => b.type === 'output' && b.id).map((b) => b.id)
+  if (outputs.length > 0) return outputs
+  return list
+    .filter((b) => (b.type === 'task' || b.type === 'step') && b.id)
+    .map((b) => b.id)
+}
+
+function normalizeBlock(raw: Record<string, unknown>): GuideBlock {
+  const type = (raw.type as GuideBlockType) || 'task'
+  let imageValue = String(raw.imageValue || '')
+  let youtubeValue = String(raw.youtubeValue || '')
+
+  // Tương thích dữ liệu cũ (mediaType + mediaValue)
+  const legacyMedia = String(raw.mediaValue || '')
+  if (!imageValue && raw.mediaType === 'image' && legacyMedia) {
+    imageValue = legacyMedia
+  }
+  if (!youtubeValue && raw.mediaType === 'youtube' && legacyMedia) {
+    youtubeValue = legacyMedia
+  }
+
+  return {
+    id: String(raw.id || createBlockId()),
+    type,
+    value: String(raw.value || ''),
+    imageValue,
+    youtubeValue,
   }
 }
 
@@ -94,12 +152,19 @@ function normalizeQuestion(raw: Record<string, unknown>): GuideQuestion {
 
 function normalize(id: string, raw: Record<string, unknown>): GuideItem {
   const questionsRaw = Array.isArray(raw.questions) ? raw.questions : []
+  const guidesRaw = Array.isArray(raw.guides) ? raw.guides : []
   return {
     id,
     level: Number(raw.level) || 1,
     month: Number(raw.month) || 1,
     week: Number(raw.week) || 1,
-    guides: Array.isArray(raw.guides) ? (raw.guides as GuideBlock[]) : [],
+    monthDescription: String(raw.monthDescription || ''),
+    weekDescription: String(raw.weekDescription || ''),
+    tasksTitle: String(raw.tasksTitle || ''),
+    outputsTitle: String(raw.outputsTitle || ''),
+    guides: guidesRaw.map((g) =>
+      normalizeBlock((g || {}) as Record<string, unknown>),
+    ),
     questions: questionsRaw.map((q) =>
       normalizeQuestion((q || {}) as Record<string, unknown>),
     ),
@@ -122,6 +187,10 @@ export type GuidePayload = {
   level: number
   month: number
   week: number
+  monthDescription: string
+  weekDescription: string
+  tasksTitle: string
+  outputsTitle: string
   guides: GuideBlock[]
   questions: GuideQuestion[]
 }
@@ -142,6 +211,31 @@ export async function updateGuide(id: string, payload: GuidePayload) {
     ...payload,
     updatedAt: Date.now(),
   })
+}
+
+/** Đồng bộ mô tả tháng cho mọi tuần cùng cấp · tháng */
+export async function syncMonthDescription(
+  level: number,
+  month: number,
+  monthDescription: string,
+  exceptId?: string,
+) {
+  const all = await listGuides()
+  const siblings = all.filter(
+    (g) =>
+      g.level === level &&
+      g.month === month &&
+      g.id !== exceptId &&
+      g.monthDescription !== monthDescription,
+  )
+  await Promise.all(
+    siblings.map((g) =>
+      update(ref(rtdb, `${ROOT}/${g.id}`), {
+        monthDescription,
+        updatedAt: Date.now(),
+      }),
+    ),
+  )
 }
 
 export async function deleteGuide(id: string) {

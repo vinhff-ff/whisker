@@ -20,6 +20,7 @@ import {
   subscribeAuth,
   type AuthUser,
 } from './auth'
+import { hasLevelIntroPending } from './levelIntro'
 
 type AuthContextValue = {
   user: AuthUser | null
@@ -112,7 +113,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return children
 }
 
-/** Đã login + đã làm test mới được vào web */
+/** Đã login + đã làm test + đã đóng intro mới được vào web */
 export function RequireTestCompleted({ children }: { children: ReactNode }) {
   const { user, profile, ready } = useAuth()
   const location = useLocation()
@@ -124,16 +125,22 @@ export function RequireTestCompleted({ children }: { children: ReactNode }) {
   if (!profile?.hasCompletedTest) {
     return <Navigate to="/test" replace />
   }
+  // Vừa nhận level — phải xem & đóng giới thiệu trước khi vào trang chủ
+  if (hasLevelIntroPending(user.uid)) {
+    return <Navigate to="/test" replace />
+  }
   return children
 }
 
-/** Trang test: phải login, nếu đã làm rồi thì về Home */
+/** Trang test: phải login; đã làm + đã đóng intro thì về Home */
 export function RequireTestPending({ children }: { children: ReactNode }) {
   const { user, profile, ready } = useAuth()
 
   if (!ready) return <AuthLoading />
   if (!user) return <Navigate to="/login" replace />
-  if (profile?.hasCompletedTest) return <Navigate to="/" replace />
+  if (profile?.hasCompletedTest && !hasLevelIntroPending(user.uid)) {
+    return <Navigate to="/" replace />
+  }
   return children
 }
 
@@ -143,12 +150,9 @@ export function GuestOnly({ children }: { children: ReactNode }) {
 
   if (!ready) return <AuthLoading />
   if (user) {
-    return (
-      <Navigate
-        to={profile?.hasCompletedTest ? '/' : '/test'}
-        replace
-      />
-    )
+    const goHome =
+      profile?.hasCompletedTest && !hasLevelIntroPending(user.uid)
+    return <Navigate to={goHome ? '/' : '/test'} replace />
   }
   return children
 }

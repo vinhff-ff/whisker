@@ -9,6 +9,7 @@ import KhoBauIcon from '../../assets/khobau.png'
 import Button from '../../ui/button'
 import { CameraFilled } from '@ant-design/icons'
 import {
+  getProofRequiredBlockIds,
   listGuides,
   type GuideBlock,
   type GuideItem,
@@ -39,6 +40,10 @@ import {
 } from '../../service/rtdb'
 import { saveUserToStorage } from '../../service/storage'
 import { useAuth } from '../../service/AuthGate'
+import {
+  hasSeenMonthIntro,
+  markMonthIntroSeen,
+} from '../../service/monthIntro'
 
 const WEEKS = [
   { week: 1, label: 'Tuần 1', icon: StartIcon, x: 26, y: 27, mx: 25, my: 74, tilt: -7 },
@@ -102,6 +107,7 @@ const MapPage = () => {
   const [isMobile, setIsMobile] = useState(false)
   const [weekProofs, setWeekProofs] = useState<WeekProofs>({})
   const [uploadingStepId, setUploadingStepId] = useState<string | null>(null)
+  const [showMonthIntro, setShowMonthIntro] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)')
@@ -148,9 +154,7 @@ const MapPage = () => {
           const guide = monthGuides.find((g) => Number(g.week) === week)
           if (!guide) break
 
-          const stepIds = (guide.guides || [])
-            .filter((b) => b.type === 'step' && b.id)
-            .map((b) => b.id)
+          const stepIds = getProofRequiredBlockIds(guide.guides)
           const requiredIds =
             stepIds.length > 0 ? stepIds : [`week-${week}`]
           const proofs = getWeekProofs(user.uid, level, currentMonth, week)
@@ -177,6 +181,16 @@ const MapPage = () => {
         setDone(sanitizeSequentialDone(steps, available))
         setQuizRewards(progress.quizRewards || {})
         setTotalScore(profile?.score || 0)
+
+        const hasMonthDesc = monthGuides.some((g) =>
+          Boolean((g.monthDescription || '').trim()),
+        )
+        if (
+          hasMonthDesc &&
+          !hasSeenMonthIntro(user.uid, level, currentMonth)
+        ) {
+          setShowMonthIntro(true)
+        }
       } catch (err) {
         if (!alive) return
         setError(err instanceof Error ? err.message : 'Không tải được bản đồ.')
@@ -217,6 +231,16 @@ const MapPage = () => {
       ),
     [lessonByWeek],
   )
+
+  const monthDescription = useMemo(() => {
+    const hit = guides.find((g) => (g.monthDescription || '').trim())
+    return hit?.monthDescription?.trim() || ''
+  }, [guides])
+
+  const closeMonthIntro = () => {
+    if (user) markMonthIntroSeen(user.uid, level, currentMonth)
+    setShowMonthIntro(false)
+  }
 
   const activeLesson =
     selectedWeek !== null ? lessonByWeek[selectedWeek] || null : null
@@ -342,10 +366,7 @@ const MapPage = () => {
     if (!user) return
     const lesson = lessonByWeek[week]
     if (!lesson) return
-    const stepIds = (lesson.guides || [])
-      .filter((b) => b.type === 'step' && b.id)
-      .map((b) => b.id)
-
+    const stepIds = getProofRequiredBlockIds(lesson.guides)
     const requiredIds = stepIds.length > 0 ? stepIds : [`week-${week}`]
     if (!hasAllStepProofs(requiredIds, proofs)) return
     if (done[String(week)]) return
@@ -401,9 +422,7 @@ const MapPage = () => {
     )
     setWeekProofs(next)
     const lesson = lessonByWeek[selectedWeek]
-    const stepIds = (lesson?.guides || [])
-      .filter((b) => b.type === 'step' && b.id)
-      .map((b) => b.id)
+    const stepIds = getProofRequiredBlockIds(lesson?.guides)
     const requiredIds =
       stepIds.length > 0 ? stepIds : [`week-${selectedWeek}`]
     if (!hasAllStepProofs(requiredIds, next)) {
@@ -459,23 +478,86 @@ const MapPage = () => {
     )
   }
 
+  const renderBlockMedia = (block: GuideBlock, label: string) => (
+    <>
+      {block.imageValue ? (
+        <img
+          src={block.imageValue}
+          alt={label}
+          className="map-lesson__media"
+        />
+      ) : null}
+      {block.youtubeValue
+        ? (() => {
+          const embed = youtubeEmbedUrl(block.youtubeValue)
+          if (embed) {
+            return (
+              <div className="map-lesson__video">
+                <iframe
+                  src={embed}
+                  title={label}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )
+          }
+          return (
+            <a href={block.youtubeValue} target="_blank" rel="noreferrer">
+              {block.youtubeValue}
+            </a>
+          )
+        })()
+        : null}
+    </>
+  )
+
   const renderGuideBlock = (block: GuideBlock, index: number) => {
-    if (block.type === 'step') {
-      const stepNo =
-        (activeLesson?.guides || [])
-          .filter((b) => b.type === 'step')
-          .findIndex((b) => b.id === block.id) + 1
+    if (block.type === 'task' || block.type === 'step') {
+      const tasks = (activeLesson?.guides || []).filter(
+        (b) => b.type === 'task' || b.type === 'step',
+      )
+      const taskNo = tasks.findIndex((b) => b.id === block.id) + 1
       return (
-        <div key={block.id} className="map-lesson__block map-lesson__block--step">
-          <strong>Bước {stepNo || index + 1}</strong>
+        <div key={block.id} className="map-lesson__block">
+          <strong>Nhiệm vụ {taskNo || index + 1}</strong>
+          <p>{block.value || '—'}</p>
+          {renderBlockMedia(block, `Demo nhiệm vụ ${taskNo || index + 1}`)}
+        </div>
+      )
+    }
+
+    if (block.type === 'output') {
+      const outputs = (activeLesson?.guides || []).filter(
+        (b) => b.type === 'output',
+      )
+      const no = outputs.findIndex((b) => b.id === block.id) + 1
+      return (
+        <div
+          key={block.id}
+          className="map-lesson__block map-lesson__block--step"
+        >
+          <strong>Yêu cầu {no || index + 1}</strong>
           <p>{block.value || '—'}</p>
           {renderProofUploader(
             block.id,
-            `Minh chứng bước ${stepNo || index + 1}`,
+            `Minh chứng đầu ra ${no || index + 1}`,
           )}
         </div>
       )
     }
+
+    if (block.type === 'key') {
+      const keys = (activeLesson?.guides || []).filter((b) => b.type === 'key')
+      const no = keys.findIndex((b) => b.id === block.id) + 1
+      return (
+        <div key={block.id} className="map-lesson__block">
+          <strong>Gợi ý {no || index + 1}</strong>
+          <p>{block.value || '—'}</p>
+        </div>
+      )
+    }
+
     if (block.type === 'image') {
       return block.value ? (
         <div key={block.id} className="map-lesson__block">
@@ -483,6 +565,7 @@ const MapPage = () => {
         </div>
       ) : null
     }
+
     const embed = youtubeEmbedUrl(block.value)
     return (
       <div key={block.id} className="map-lesson__block">
@@ -500,6 +583,79 @@ const MapPage = () => {
             {block.value || '—'}
           </a>
         )}
+      </div>
+    )
+  }
+
+  const renderLessonSections = (lesson: GuideItem) => {
+    const guidesList = lesson.guides || []
+    const tasks = guidesList.filter(
+      (b) => b.type === 'task' || b.type === 'step',
+    )
+    const outputs = guidesList.filter((b) => b.type === 'output')
+    const keys = guidesList.filter((b) => b.type === 'key')
+    const legacy = guidesList.filter(
+      (b) => b.type === 'image' || b.type === 'youtube',
+    )
+    const hasContent =
+      Boolean((lesson.weekDescription || '').trim()) ||
+      tasks.length + outputs.length + keys.length + legacy.length > 0
+
+    if (!hasContent) {
+      return (
+        <div className="map-lesson__guides">
+          <div className="map-panel__empty">Chưa có nội dung tuần này.</div>
+          <div className="map-lesson__block map-lesson__block--step">
+            <strong>Minh chứng hoàn thành tuần</strong>
+            <p>Upload 1 ảnh minh chứng để hoàn thành tuần này.</p>
+            {renderProofUploader(`week-${lesson.week}`, 'Minh chứng tuần')}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="map-lesson__guides">
+        {tasks.length > 0 ? (
+          <div className="map-lesson__section">
+            <h4 className="map-lesson__section-title">Nhiệm vụ</h4>
+            {lesson.tasksTitle?.trim() ? (
+              <p className="map-lesson__section-heading">{lesson.tasksTitle}</p>
+            ) : null}
+            {tasks.map((block, index) => renderGuideBlock(block, index))}
+          </div>
+        ) : null}
+
+        <div className="map-lesson__section">
+          <h4 className="map-lesson__section-title">Yêu cầu đầu ra</h4>
+          {lesson.outputsTitle?.trim() ? (
+            <p className="map-lesson__section-heading">{lesson.outputsTitle}</p>
+          ) : null}
+          {outputs.length > 0 ? (
+            outputs.map((block, index) => renderGuideBlock(block, index))
+          ) : (
+            <div className="map-lesson__block map-lesson__block--step">
+              <strong>Minh chứng hoàn thành tuần</strong>
+              <p>Upload 1 ảnh minh chứng đầu ra để hoàn thành tuần này.</p>
+              {renderProofUploader(`week-${lesson.week}`, 'Minh chứng tuần')}
+            </div>
+          )}
+        </div>
+
+        {keys.length > 0 ? (
+          <div className="map-lesson__section">
+            <h4 className="map-lesson__section-title">Gợi ý làm</h4>
+            {keys.map((block, index) => renderGuideBlock(block, index))}
+          </div>
+        ) : null}
+
+        {legacy.map((block, index) => renderGuideBlock(block, index))}
+
+        <p className="map-lesson__hint">
+          {done[String(lesson.week)]
+            ? '✓ Đã đủ minh chứng — tuần đã hoàn thành.'
+            : 'Upload đủ ảnh minh chứng cho mọi yêu cầu đầu ra để tự hoàn thành tuần.'}
+        </p>
       </div>
     )
   }
@@ -589,7 +745,7 @@ const MapPage = () => {
                         title={
                           isDone
                             ? 'Đã hoàn thành (đủ minh chứng)'
-                            : 'Upload minh chứng các bước để hoàn thành'
+                            : 'Upload minh chứng đầu ra để hoàn thành'
                         }
                         aria-label={
                           isDone
@@ -648,71 +804,32 @@ const MapPage = () => {
               aria-label={`Tuần ${selectedWeek}`}
             >
               <div className="map-panel__head">
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 16,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>
+                <p className="map-panel__title">
+                  <span className="map-panel__week">
                     Tuần {activeLesson?.week ?? selectedWeek}
                   </span>
-                </div>
+                  {activeLesson?.weekDescription?.trim()
+                    ? `: ${activeLesson.weekDescription}`
+                    : ''}
+                </p>
                 <button
                   type="button"
                   className="map-panel__close"
                   onClick={() => setSelectedWeek(null)}
+                  aria-label="Đóng"
                 >
-                  Đóng
+                  ✕
                 </button>
               </div>
 
               {!activeLesson ? (
                 <div className="map-panel__empty">
-                  Tháng {currentMonth} chưa có bài học cho tuần {selectedWeek} (cấp {level}).
+                  Tháng {currentMonth} chưa có bài học cho tuần {selectedWeek}{' '}
+                  (cấp {level}).
                 </div>
               ) : (
                 <div className="map-lesson">
-                  {(activeLesson.guides || []).length === 0 ? (
-                    <div className="map-lesson__guides">
-                      <div className="map-panel__empty">Chưa có hướng dẫn chi tiết.</div>
-                      <div className="map-lesson__block map-lesson__block--step">
-                        <strong>Minh chứng hoàn thành tuần</strong>
-                        <p>Upload 1 ảnh minh chứng để hoàn thành tuần này.</p>
-                        {renderProofUploader(
-                          `week-${selectedWeek}`,
-                          'Minh chứng tuần',
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="map-lesson__guides">
-                      {activeLesson.guides.map((block, index) =>
-                        renderGuideBlock(block, index),
-                      )}
-                      {(activeLesson.guides || []).every(
-                        (b) => b.type !== 'step',
-                      ) ? (
-                        <div className="map-lesson__block map-lesson__block--step">
-                          <strong>Minh chứng hoàn thành tuần</strong>
-                          <p>
-                            Tuần này chưa có bước hướng dẫn. Hãy upload 1 ảnh
-                            minh chứng để hoàn thành tuần.
-                          </p>
-                          {renderProofUploader(
-                            `week-${selectedWeek}`,
-                            'Minh chứng tuần',
-                          )}
-                        </div>
-                      ) : null}
-                      <p className="map-lesson__hint">
-                        {done[String(selectedWeek)]
-                          ? '✓ Đã đủ minh chứng — tuần đã hoàn thành.'
-                          : 'Upload đủ ảnh minh chứng cho mọi bước để tự hoàn thành tuần.'}
-                      </p>
-                    </div>
-                  )}
+                  {renderLessonSections(activeLesson)}
                 </div>
               )}
             </aside>
@@ -747,6 +864,23 @@ const MapPage = () => {
           </div>
         </aside>
       </div>
+
+      {showMonthIntro && monthDescription ? (
+        <div className="map-month-intro" role="dialog" aria-modal="true">
+          <div className="map-month-intro__backdrop" />
+          <div className="map-month-intro__card">
+            <p className="map-month-intro__eyebrow">Tháng {currentMonth}</p>
+            <h2 className="map-month-intro__title">Giới thiệu tháng</h2>
+            <p className="map-month-intro__body">{monthDescription}</p>
+            <Button
+              className="btn-wood btn-wood--compact map-month-intro__close"
+              onClick={closeMonthIntro}
+            >
+              Đóng
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <Drawer
         title={`Trò chơi · Tuần ${gameWeek ?? ''}`}
