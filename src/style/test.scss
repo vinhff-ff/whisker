@@ -202,6 +202,49 @@
     width: auto;
     margin: 0 auto;
   }
+
+  &--video {
+    background: #0a0604;
+  }
+
+  &__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  &__video-mute {
+    position: absolute;
+    z-index: 20;
+    appearance: none;
+    border: 1px solid rgba(255, 246, 208, 0.28);
+    background: rgba(40, 22, 8, 0.55);
+    backdrop-filter: blur(10px);
+    color: #fff6d0;
+    font-family: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    line-height: 1.2;
+    bottom: max(20px, env(safe-area-inset-bottom, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    padding: 8px 16px;
+    border-radius: 40px;
+    font-size: 12px;
+  }
+
+  &__video-close.treasure-btn {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    left: auto;
+    z-index: 20;
+    flex: none;
+    margin: 0;
+  }
 }
 
 @media (max-width: 767px) {
@@ -246,6 +289,18 @@
       width: calc(88% - 50px);
       max-height: calc(100dvh - 32px);
       padding: 24px 14px;
+    }
+
+    &__video-close.treasure-btn {
+      top: max(10px, env(safe-area-inset-top, 0px));
+      right: max(10px, env(safe-area-inset-right, 0px));
+    }
+
+    &__video-mute {
+      bottom: max(16px, env(safe-area-inset-bottom, 0px));
+      left: max(10px, env(safe-area-inset-left, 0px));
+      padding: 8px 14px;
+      font-size: 12px;
     }
   }
 }

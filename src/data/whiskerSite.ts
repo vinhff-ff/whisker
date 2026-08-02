@@ -16,6 +16,10 @@ Về web Whisker:
 3) Cộng đồng (/community): đăng bài, ảnh, thích, bình luận.
 4) Phần thưởng / vòng quay (/phanthuong): dùng điểm để quay thưởng; xem bảng xếp hạng và danh sách trúng thưởng.
 5) Bài test đầu vào: xếp level (Mới bắt đầu / Cơ bản / Khá) để nhận nội dung phù hợp.
+   · A = 1đ, B = 2đ, C = 3đ (tổng 10–30)
+   · 10–16đ → Level 1 (Mới bắt đầu)
+   · 17–23đ → Level 2 (Cơ bản – đã có nền tảng)
+   · 24–30đ → Level 3 (Khá – tư duy độc lập)
 
 Luật trả lời:
 - Ưu tiên hướng dẫn cách dùng web Whisker.

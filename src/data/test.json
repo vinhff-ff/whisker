@@ -1,117 +1,126 @@
 {
-    "title": "Bài test đánh giá trình độ",
-    "description": "Bộ 10 câu hỏi đánh giá trình độ học sinh cấp 2 trong các lĩnh vực chế tạo mô hình, lập trình và tư duy khoa học",
-    "scoring": {
-      "A": 0,
-      "B": 1,
-      "C": 2,
-      "max_score": 20,
-      "levels": [
-        { "range": [0, 6], "label": "Mới bắt đầu" },
-        { "range": [7, 13], "label": "Cơ bản" },
-        { "range": [14, 20], "label": "Khá" }
-      ]
-    },
-    "questions": [
+  "title": "Bài test đánh giá năng lực",
+  "description": "",
+  "scoring": {
+    "A": 1,
+    "B": 2,
+    "C": 3,
+    "max_score": 30,
+    "levels": [
       {
-        "id": 1,
-        "skill": "che_tao_may_bay_giay",
-        "question": "Em đã từng gấp máy bay giấy chưa?",
-        "options": [
-          { "key": "A", "text": "Chưa từng làm" },
-          { "key": "B", "text": "Em gấp theo mẫu có sẵn" },
-          { "key": "C", "text": "Em tự chỉnh sửa được kiểu riêng của mình" }
-        ]
+        "range": [0, 16],
+        "label": "Mới bắt đầu"
       },
       {
-        "id": 2,
-        "skill": "lap_rap_mo_hinh",
-        "question": "Em đã từng lắp một mô hình (lego, tàu hoặc máy bay lắp ráp) chưa?",
-        "options": [
-          { "key": "A", "text": "Chưa từng làm" },
-          { "key": "B", "text": "Em lắp theo hướng dẫn từng bước" },
-          { "key": "C", "text": "Em tự lắp được mà không cần hướng dẫn" }
-        ]
+        "range": [17, 23],
+        "label": "Cơ bản"
       },
       {
-        "id": 3,
-        "skill": "doc_ban_ve",
-        "question": "Em có tự đọc hiểu được một bản vẽ hoặc sơ đồ hướng dẫn không?",
-        "options": [
-          { "key": "A", "text": "Chưa từng thử" },
-          { "key": "B", "text": "Em cần người khác giải thích thêm" },
-          { "key": "C", "text": "Em tự đọc và hiểu được" }
-        ]
-      },
-      {
-        "id": 4,
-        "skill": "lap_trinh_keo_tha",
-        "question": "Em đã từng sử dụng công cụ kéo-thả để lập trình (như Scratch, Blockly) chưa?",
-        "options": [
-          { "key": "A", "text": "Chưa từng dùng" },
-          { "key": "B", "text": "Em đã dùng thử vài lần" },
-          { "key": "C", "text": "Em tự làm được một sản phẩm hoàn chỉnh" }
-        ]
-      },
-      {
-        "id": 5,
-        "skill": "lap_trinh_code_that",
-        "question": "Em đã từng viết code bằng chữ (như Python, JavaScript) chưa?",
-        "options": [
-          { "key": "A", "text": "Chưa từng viết" },
-          { "key": "B", "text": "Em viết được vài lệnh cơ bản" },
-          { "key": "C", "text": "Em viết được đoạn code có vòng lặp hoặc điều kiện" }
-        ]
-      },
-      {
-        "id": 6,
-        "skill": "dien_tu_co_ban",
-        "question": "Em đã từng tự lắp một mạch điện đơn giản (pin, dây, bóng đèn) chưa?",
-        "options": [
-          { "key": "A", "text": "Chưa từng làm" },
-          { "key": "B", "text": "Em lắp theo hướng dẫn có sẵn" },
-          { "key": "C", "text": "Em tự lắp và hiểu vì sao mạch hoạt động" }
-        ]
-      },
-      {
-        "id": 7,
-        "skill": "ap_dung_cong_thuc",
-        "question": "Em có áp dụng được công thức tính toán đơn giản (như tốc độ, quãng đường) không?",
-        "options": [
-          { "key": "A", "text": "Em chưa từng dùng" },
-          { "key": "B", "text": "Em làm được khi có công thức sẵn" },
-          { "key": "C", "text": "Em tự chọn được công thức phù hợp" }
-        ]
-      },
-      {
-        "id": 8,
-        "skill": "kha_nang_cai_tien",
-        "question": "Khi sản phẩm của em không hoạt động như ý, em thường làm gì?",
-        "options": [
-          { "key": "A", "text": "Em bỏ cuộc" },
-          { "key": "B", "text": "Em sửa theo hướng dẫn có sẵn" },
-          { "key": "C", "text": "Em tự thử nhiều cách để cải tiến" }
-        ]
-      },
-      {
-        "id": 9,
-        "skill": "tu_duy_sang_tao",
-        "question": "Em có tự nghĩ ra ý tưởng riêng, không theo mẫu có sẵn không?",
-        "options": [
-          { "key": "A", "text": "Em chưa từng thử" },
-          { "key": "B", "text": "Em cần được gợi ý trước" },
-          { "key": "C", "text": "Em tự nghĩ ra và thực hiện được" }
-        ]
-      },
-      {
-        "id": 10,
-        "skill": "kha_nang_dien_dat",
-        "question": "Em có thể giải thích cách mình làm ra một sản phẩm cho người khác không?",
-        "options": [
-          { "key": "A", "text": "Em chưa từng làm điều này" },
-          { "key": "B", "text": "Em giải thích khi được hỏi" },
-          { "key": "C", "text": "Em chủ động hướng dẫn người khác" }
-        ]
+        "range": [24, 30],
+        "label": "Khá"
       }
     ]
-  }
+  },
+  "questions": [
+    {
+      "id": 1,
+      "skill": "quan_sat_hien_tuong",
+      "question": "Khi thấy một hiện tượng lạ (nước đục, cây héo...), em:",
+      "options": [
+        { "key": "A", "text": "Không để ý, cho là bình thường" },
+        { "key": "B", "text": "Tò mò nhưng chỉ hỏi người khác giải thích" },
+        { "key": "C", "text": "Tự đặt câu hỏi \"vì sao\" và tìm cách kiểm chứng" }
+      ]
+    },
+    {
+      "id": 2,
+      "skill": "mo_hinh_thu_nho",
+      "question": "Em đã từng dựng một mô hình thu nhỏ (sơ đồ, mô hình giấy, Lego...) để mô phỏng một vật/hệ thống thật chưa?",
+      "options": [
+        { "key": "A", "text": "Chưa từng làm" },
+        { "key": "B", "text": "Làm được nếu có mẫu/hướng dẫn sẵn" },
+        { "key": "C", "text": "Tự thiết kế mô hình theo ý riêng" }
+      ]
+    },
+    {
+      "id": 3,
+      "skill": "thu_thap_thong_tin",
+      "question": "Khi cần thu thập thông tin để trả lời một câu hỏi (đo, quan sát, thử nghiệm), em:",
+      "options": [
+        { "key": "A", "text": "Cần người khác làm giúp hoàn toàn" },
+        { "key": "B", "text": "Làm được theo đúng các bước có sẵn" },
+        { "key": "C", "text": "Tự lên kế hoạch các bước cần làm" }
+      ]
+    },
+    {
+      "id": 4,
+      "skill": "doc_hieu_so_lieu",
+      "question": "Khi có một bảng số liệu/kết quả quan sát, em:",
+      "options": [
+        { "key": "A", "text": "Không biết đọc hiểu ý nghĩa của nó" },
+        { "key": "B", "text": "Hiểu được nếu có người giải thích" },
+        { "key": "C", "text": "Tự rút ra kết luận từ số liệu đó" }
+      ]
+    },
+    {
+      "id": 5,
+      "skill": "do_dac_tinh_toan",
+      "question": "Khi cần đo đạc hoặc tính toán số lượng vật liệu cho một sản phẩm, em:",
+      "options": [
+        { "key": "A", "text": "Chưa biết cách đo/tính" },
+        { "key": "B", "text": "Tính được nếu có công thức sẵn" },
+        { "key": "C", "text": "Tự ước lượng, tính toán không cần công thức có sẵn" }
+      ]
+    },
+    {
+      "id": 6,
+      "skill": "che_tao_giai_quyet",
+      "question": "Khi có một vấn đề cần giải quyết bằng vật dụng tự chế (lọc nước, làm hộp đựng đồ...), em:",
+      "options": [
+        { "key": "A", "text": "Chưa từng thử làm việc này" },
+        { "key": "B", "text": "Làm được nếu có hướng dẫn từng bước" },
+        { "key": "C", "text": "Tự nghĩ ra cách giải quyết riêng" }
+      ]
+    },
+    {
+      "id": 7,
+      "skill": "bao_ve_y_kien",
+      "question": "Khi ý kiến của em khác với bạn về một vấn đề khoa học, em:",
+      "options": [
+        { "key": "A", "text": "Nghe theo ý người khác vì không chắc" },
+        { "key": "B", "text": "Có thể giải thích nếu được gợi ý sẵn" },
+        { "key": "C", "text": "Tự đưa lý do/bằng chứng để bảo vệ ý kiến" }
+      ]
+    },
+    {
+      "id": 8,
+      "skill": "trinh_bay",
+      "question": "Khi cần trình bày lại một điều em vừa tìm hiểu được cho người khác, em:",
+      "options": [
+        { "key": "A", "text": "Không biết trình bày thế nào" },
+        { "key": "B", "text": "Trình bày được nếu có mẫu/dàn ý sẵn" },
+        { "key": "C", "text": "Tự sắp xếp và trình bày theo cách riêng" }
+      ]
+    },
+    {
+      "id": 9,
+      "skill": "tham_my_san_pham",
+      "question": "Khi làm một sản phẩm, ngoài việc nó \"chạy được\", em có quan tâm đến hình thức/thẩm mỹ của nó không?",
+      "options": [
+        { "key": "A", "text": "Không quan tâm, chỉ cần chạy được" },
+        { "key": "B", "text": "Làm đẹp hơn nếu có mẫu trang trí sẵn" },
+        { "key": "C", "text": "Tự sáng tạo hình thức riêng cho sản phẩm" }
+      ]
+    },
+    {
+      "id": 10,
+      "skill": "lam_viec_nhom",
+      "question": "Khi làm việc chung với bạn trong một nhiệm vụ, em:",
+      "options": [
+        { "key": "A", "text": "Thường làm một mình hoặc để bạn quyết định hết" },
+        { "key": "B", "text": "Làm tốt phần việc được giao" },
+        { "key": "C", "text": "Chủ động đề xuất, phân công công việc cho nhóm" }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Bg from '../../assets/bg.png'
 import Papper from '../../assets/papper.png'
+import BgLogin from '../../assets/bglogin.mp4'
 import Button from '../../ui/button'
 import {
   placementTest,
@@ -38,7 +39,7 @@ const LEVEL_INTROS: Record<
   },
 }
 
-type Phase = 'quiz' | 'level' | 'intro'
+type Phase = 'quiz' | 'video' | 'intro'
 
 type DoneResult = { score: number; level: string }
 
@@ -46,14 +47,16 @@ const TestPage = () => {
   const navigate = useNavigate()
   const { user, profile, refreshProfile } = useAuth()
   const questions = placementTest.questions
+  const videoRef = useRef<HTMLVideoElement>(null)
   const [index, setIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<number, AnswerKey>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [phase, setPhase] = useState<Phase>('quiz')
   const [done, setDone] = useState<DoneResult | null>(null)
+  const [muted, setMuted] = useState(true)
 
-  // Quay lại /test khi chưa đóng intro (sau refresh / điều hướng)
+  // Quay lại /test khi chưa đóng intro (sau refresh) — không ghi đè phase video
   useEffect(() => {
     if (!user) return
     const pending = getLevelIntroPending(user.uid)
@@ -63,8 +66,20 @@ const TestPage = () => {
       score: profile?.testScore ?? 0,
       level: pending.level || profile?.level || 'Mới bắt đầu',
     })
-    setPhase('intro')
+    setPhase((prev) => {
+      // Đang xem video / intro thì giữ nguyên; chỉ khôi phục khi mới vào trang
+      if (prev === 'video' || prev === 'intro') return prev
+      return 'intro'
+    })
   }, [user, profile?.level, profile?.testScore])
+
+  useEffect(() => {
+    if (phase !== 'video') return
+    const el = videoRef.current
+    if (!el) return
+    el.muted = muted
+    void el.play().catch(() => undefined)
+  }, [phase, muted])
 
   const current = questions[index]
 
@@ -103,21 +118,45 @@ const TestPage = () => {
     setError('')
     try {
       const result = scoreAnswers(answers)
-      await savePlacementTestResult(user.uid, result)
-      // Giữ user trên /test cho đến khi đóng intro
+      // Đặt phase video trước khi refresh profile — tránh effect pending nhảy thẳng sang intro
+      setDone(result)
+      setMuted(true)
+      setPhase('video')
       markLevelIntroPending(user.uid, result.level)
+
+      await savePlacementTestResult(user.uid, result)
       const remote = await getRtdbUserProfile(user.uid)
       if (remote) {
         saveUserToStorage(toStoredUser(remote))
         await refreshProfile()
       }
-      setDone(result)
-      setPhase('level')
     } catch {
       setError('Không lưu được kết quả. Thử lại nhé.')
+      if (user) clearLevelIntroPending(user.uid)
+      setPhase('quiz')
+      setDone(null)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function closeVideo() {
+    const el = videoRef.current
+    if (el) {
+      el.pause()
+      el.muted = true
+    }
+    setMuted(true)
+    setPhase('intro')
+  }
+
+  function toggleMute() {
+    const el = videoRef.current
+    if (!el) return
+    const next = !muted
+    el.muted = next
+    setMuted(next)
+    if (!next) void el.play().catch(() => undefined)
   }
 
   function closeIntro() {
@@ -139,29 +178,38 @@ const TestPage = () => {
     </div>
   )
 
-  if (phase === 'level' && done) {
-    return shell(
-      <div className="test-page__panel-inner test-page__panel-inner--result">
-        <p className="test-page__eyebrow">Hoàn thành bài test</p>
-        <h1 className="test-page__title">Bạn nhận được</h1>
-        <p className="test-page__level">{done.level}</p>
-        <p className="test-page__subtitle">
-          Điểm bài test:{' '}
-          <strong>
-            {done.score}/{placementTest.scoring.max_score}
-          </strong>
-        </p>
-        <p className="test-page__subtitle">
-          Điểm thưởng bắt đầu từ <strong>0</strong>. Làm xong bài tập tuần sẽ +1
-          điểm.
-        </p>
-        <Button
-          className="btn-wood test-page__submit"
-          onClick={() => setPhase('intro')}
+  if (phase === 'video' && done) {
+    return (
+      <div className="test-page test-page--video">
+        <video
+          ref={videoRef}
+          className="test-page__video"
+          autoPlay
+          loop
+          playsInline
+          muted={muted}
+          preload="auto"
         >
-          Xem giới thiệu
+          <source src={BgLogin} type="video/mp4" />
+        </video>
+
+        <Button
+          className="btn-wood btn-wood--compact test-page__video-close"
+          onClick={closeVideo}
+          aria-label="Đóng video"
+        >
+          Đóng
         </Button>
-      </div>,
+
+        <button
+          type="button"
+          className="test-page__video-mute"
+          onClick={toggleMute}
+          title={muted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+        >
+          {muted ? 'Bật âm' : 'Tắt âm'}
+        </button>
+      </div>
     )
   }
 
@@ -171,7 +219,6 @@ const TestPage = () => {
 
     return shell(
       <div className="test-page__panel-inner test-page__panel-inner--result">
-        <p className="test-page__eyebrow">Giới thiệu hành trình</p>
         <h1 className="test-page__title">{intro.title}</h1>
         <p className="test-page__intro">{intro.body}</p>
         <Button
