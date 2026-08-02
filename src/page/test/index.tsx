@@ -198,7 +198,7 @@ const TestPage = () => {
           onClick={closeVideo}
           aria-label="Đóng video"
         >
-          Đóng
+          Bỏ qua
         </Button>
 
         <button
