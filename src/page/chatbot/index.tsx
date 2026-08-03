@@ -4,6 +4,11 @@ import { MessageFilled } from '@ant-design/icons'
 import { buildWhiskerSystemPrompt } from '../../data/whiskerSite'
 import Button from '../../ui/button'
 import Mouse from '../../assets/mouse.png'
+import { useAuth } from '../../service/AuthGate'
+import {
+  hasSeenChatbotGuide,
+  markChatbotGuideSeen,
+} from '../../service/chatbotGuide'
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
   'gemini-2.0-flash',
@@ -31,6 +36,7 @@ const WELCOME_MESSAGE: ChatMessage = {
 }
 
 const QUICK_PROMPTS = [
+  'Hướng dẫn sử dụng web',
   'Tuần này làm nhiệm vụ gì?',
   'Cách mở khóa tuần trên bản đồ?',
   'Vòng quay dùng điểm thế nào?',
@@ -38,14 +44,29 @@ const QUICK_PROMPTS = [
 ]
 
 const Chatbot = () => {
+  const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE])
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatSession = useRef<ChatSession | null>(null)
   const genAI = useRef<GoogleGenerativeAI | null>(null)
+
+  useEffect(() => {
+    if (!user) {
+      setShowGuide(false)
+      return
+    }
+    setShowGuide(!hasSeenChatbotGuide(user.uid))
+  }, [user])
+
+  const dismissGuide = () => {
+    if (user) markChatbotGuideSeen(user.uid)
+    setShowGuide(false)
+  }
 
   useEffect(() => {
     const apiKey = String(import.meta.env.VITE_GEMINI_API_KEY || '').trim()
@@ -196,17 +217,42 @@ const Chatbot = () => {
 
   return (
     <>
+      {showGuide ? (
+        <div className="chatbot-guide" role="dialog" aria-modal="true">
+          <div className="chatbot-guide__backdrop" />
+          <div className="chatbot-guide__card">
+            <p className="chatbot-guide__eyebrow">Hướng dẫn sử dụng web</p>
+            <h3 className="chatbot-guide__title">Chat với Whisker tại đây</h3>
+            <p className="chatbot-guide__text">
+              Bấm nút chat góc dưới bên phải để hỏi Whisker về bản đồ, nhiệm vụ,
+              vòng quay may mắn và cách chơi nhé!
+            </p>
+            <Button
+              className="btn-wood btn-wood--compact chatbot-guide__ok"
+              type="button"
+              onClick={dismissGuide}
+            >
+              Đã hiểu
+            </Button>
+            <div className="chatbot-guide__arrow" aria-hidden="true" />
+          </div>
+        </div>
+      ) : null}
+
       <button
-        className="chatbot-button"
-        onClick={() => setIsOpen((v) => !v)}
+        className={`chatbot-button${showGuide ? ' is-spotlight' : ''}`}
+        onClick={() => {
+          if (showGuide) return
+          setIsOpen((v) => !v)
+        }}
         title="Chat với Whisker"
         type="button"
         aria-label="Mở chat Whisker"
       >
-        <MessageFilled style={{ fontSize: 24 , color: '#6b3410' }} />
+        <MessageFilled style={{ fontSize: 24, color: '#6b3410' }} />
       </button>
 
-      {isOpen ? (
+      {isOpen && !showGuide ? (
         <div className="chatbot-window" role="dialog" aria-label="Chatbot Whisker">
           <div className="chatbot-header">
             <div className="chatbot-header-info">
