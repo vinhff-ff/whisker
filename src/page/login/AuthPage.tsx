@@ -13,6 +13,8 @@ interface AuthPageProps {
 const AuthPage = ({ initialMode = 'login' }: AuthPageProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [muted, setMuted] = useState(true)
+  // Chỉ hiển thị UI, không lưu khi đăng ký
+  const [gender, setGender] = useState<'nam' | 'nu' | 'khac'>('nam')
   const {
     mode,
     username,
@@ -159,6 +161,32 @@ const AuthPage = ({ initialMode = 'login' }: AuthPageProps) => {
                     />
                   </div>
                 </label>
+              )}
+
+              {mode === 'register' && (
+                <fieldset className="auth-field auth-gender">
+                  <legend className="auth-field__label">Giới tính</legend>
+                  <div className="auth-gender__options" role="radiogroup" aria-label="Giới tính">
+                    {(
+                      [
+                        { value: 'nam', label: 'Nam' },
+                        { value: 'nu', label: 'Nữ' },
+                        { value: 'khac', label: 'Khác' },
+                      ] as const
+                    ).map((opt) => (
+                      <label key={opt.value} className="auth-gender__option">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value={opt.value}
+                          checked={gender === opt.value}
+                          onChange={() => setGender(opt.value)}
+                        />
+                        <span>{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               )}
 
               {error && <div className="auth-page__error">{error}</div>}

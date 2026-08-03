@@ -37,6 +37,23 @@ type DashboardStats = {
   untestedUsers: number
 }
 
+/** Thông số giả cho màn thống kê (không lấy từ DB) */
+const FAKE_STATS = {
+  genderNam: 58,
+  genderNu: 41,
+  genderKhac: 11,
+  avgStudyMinutes: 42,
+  completionRate: 68,
+  avgScore: 76,
+  activeSessions: 93,
+  rewardsClaimed: 217,
+}
+
+const FAKE_GENDER = {
+  labels: ['Nam', 'Nữ', 'Khác'],
+  values: [FAKE_STATS.genderNam, FAKE_STATS.genderNu, FAKE_STATS.genderKhac],
+}
+
 function startOfDay(ts: number) {
   const d = new Date(ts)
   d.setHours(0, 0, 0, 0)
@@ -182,6 +199,19 @@ const AdminDashboard = () => {
     ],
   }
 
+  const genderData = {
+    labels: FAKE_GENDER.labels,
+    datasets: [
+      {
+        label: 'Người dùng',
+        data: FAKE_GENDER.values,
+        backgroundColor: ['#1677ff', '#eb2f96', '#8c8c8c'],
+        borderRadius: 2,
+        maxBarThickness: 48,
+      },
+    ],
+  }
+
   return (
     <section className="admin-page admin-dashboard">
       <header className="admin-page__header">
@@ -207,6 +237,38 @@ const AdminDashboard = () => {
         <article className="admin-stat">
           <span className="admin-stat__label">Chưa làm test</span>
           <strong className="admin-stat__value">{loading ? '—' : stats.untestedUsers}</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Nam</span>
+          <strong className="admin-stat__value">{FAKE_STATS.genderNam}</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Nữ</span>
+          <strong className="admin-stat__value">{FAKE_STATS.genderNu}</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Khác</span>
+          <strong className="admin-stat__value">{FAKE_STATS.genderKhac}</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Thời gian học TB</span>
+          <strong className="admin-stat__value">{FAKE_STATS.avgStudyMinutes} phút</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Tỷ lệ hoàn thành</span>
+          <strong className="admin-stat__value">{FAKE_STATS.completionRate}%</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Điểm trung bình</span>
+          <strong className="admin-stat__value">{FAKE_STATS.avgScore}</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Phiên đang hoạt động</span>
+          <strong className="admin-stat__value">{FAKE_STATS.activeSessions}</strong>
+        </article>
+        <article className="admin-stat">
+          <span className="admin-stat__label">Phần thưởng đã nhận</span>
+          <strong className="admin-stat__value">{FAKE_STATS.rewardsClaimed}</strong>
         </article>
       </div>
 
@@ -282,6 +344,39 @@ const AdminDashboard = () => {
                 }}
               />
             )}
+          </div>
+        </article>
+
+        <article className="admin-chart-card">
+          <header className="admin-chart-card__header">
+            <h2>Người dùng theo giới tính</h2>
+            <p>Dữ liệu minh họa.</p>
+          </header>
+          <div className="admin-chart-card__body">
+            <Bar
+              data={genderData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                },
+                scales: {
+                  x: {
+                    grid: { display: false },
+                    ticks: { color: 'rgba(0,0,0,0.45)' },
+                  },
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      precision: 0,
+                      color: 'rgba(0,0,0,0.45)',
+                    },
+                    grid: { color: '#f0f0f0' },
+                  },
+                },
+              }}
+            />
           </div>
         </article>
       </div>

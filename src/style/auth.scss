@@ -272,6 +272,57 @@
   }
 }
 
+.auth-gender {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+
+  legend.auth-field__label {
+    padding: 0;
+    float: left;
+    width: 100%;
+  }
+
+  &__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(8px, 2cqw, 14px);
+    clear: both;
+    padding-top: clamp(2px, 0.6cqw, 4px);
+  }
+
+  &__option {
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(4px, 1cqw, 6px);
+    cursor: pointer;
+    font-size: clamp(12px, 2.6cqw, 14px);
+    font-weight: 700;
+    color: var(--auth-ink);
+
+    input[type='radio'] {
+      appearance: auto;
+      width: clamp(12px, 2.6cqw, 14px);
+      height: clamp(12px, 2.6cqw, 14px);
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      box-shadow: none;
+      accent-color: #c8821e;
+      cursor: pointer;
+      flex-shrink: 0;
+
+      &:focus {
+        border: none;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
 @media (max-width: 767px) {
   .auth-page {
     &__panel-wrap {
